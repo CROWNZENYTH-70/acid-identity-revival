@@ -1,0 +1,17 @@
+# never publish game files, keys, or build outputs
+*.apk
+*.idsig
+*.ap_
+*.dex
+*.dll
+*.bin
+*.keystore
+*.jks
+AcierData/
+apk_dec/
+apk_out/
+work/
+managed/
+bin/
+obj/
+boot.log

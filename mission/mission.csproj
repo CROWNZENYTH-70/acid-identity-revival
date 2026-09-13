@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="protobuf-net">
+      <HintPath>../apk_out/assets/bin/Data/Managed/protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="AcierProtocol">
+      <HintPath>../apk_out/assets/bin/Data/Managed/AcierProtocol.dll</HintPath>
+    </Reference>
+    <Reference Include="AcierProtocolSerializer">
+      <HintPath>../apk_out/assets/bin/Data/Managed/AcierProtocolSerializer.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
