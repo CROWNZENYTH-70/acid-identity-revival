@@ -8,11 +8,8 @@ Proven on-device: boot → spawn → 3 guards fight back → killable. No server
 
 ## Demo
 
-- Hub boot (Animus): _YouTube link here_
-- Tutorial loading → Firenze fight (3 guards): _YouTube link here_
-
-Upload demos to YouTube (unlisted or public) and replace the lines above.
-Keep videos off GitHub itself — 500M+ files exceed repo limits.
+- Hub boot (Animus): https://github.com/CROWNZENYTH-70/acid-identity-revival/releases/download/demo-v1/demo-hub.mp4
+- Tutorial loading → Firenze fight (3 guards): https://github.com/CROWNZENYTH-70/acid-identity-revival/releases/download/demo-v1/demo-fight.mp4
 
 ## What works
 
