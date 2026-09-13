@@ -27,7 +27,7 @@ Proven on-device: boot → spawn → 3 guards fight back → killable. No server
 ## Requirements
 
 - Your own AC Identity APK + its `AcierData` cache (not included, never will be)
-- `apktool`, `apksigner`, `dotnet` 8 SDK
+- `apktool`, `apksigner`, `keytool`, `dotnet` 8 SDK (apktool/keytool need Java)
 - Android device for install + `ACID_Revival/` folder on shared storage
 
 ## Build
@@ -43,11 +43,17 @@ dotnet run --project patch -- "$PWD/apk_dec/assets/bin/Data/Managed" \
 # dotnet run --project patch -- "$PWD/apk_dec/assets/bin/Data/Managed" \
 #   "$PWD/work/Assembly-CSharp.dll" freeroam
 
-# 3. rebuild + sign with YOUR keystore
+# 3. rebuild + sign (first time: create YOUR keystore, keep it private)
+mkdir -p work work/Missions
 cp work/Assembly-CSharp.dll work/SharedBaseLib.dll apk_dec/assets/bin/Data/Managed/
 apktool b apk_dec -o work/ACID-revival-unsigned.apk
+cp work/ACID-revival-unsigned.apk work/ACID-revival.apk
+keytool -genkeypair -keystore work/revival.keystore -storepass pass:CHANGE_ME \
+  -alias acid -keypass pass:CHANGE_ME -keyalg RSA -keysize 2048 \
+  -validity 10000 -dname "CN=ACID Revival"
 apksigner sign --ks work/revival.keystore --ks-pass pass:CHANGE_ME \
   --ks-key-alias acid --key-pass pass:CHANGE_ME work/ACID-revival.apk
+apksigner verify work/ACID-revival.apk
 
 # 4. mission (edit spawn/guids in mission/Program.cs first)
 dotnet run --project mission \
