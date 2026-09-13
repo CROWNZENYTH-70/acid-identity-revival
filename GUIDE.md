@@ -116,6 +116,16 @@ bundles ONLY from here. Push your own cache copy's bundle files to
 `files/cache/` via adb — nothing in this repo fetches them, and the shared
 folder above can never substitute for them.
 
+**High-quality envs:** every scene ships Low + High variants, but most dumps
+are Low-only. A MEGA dump (`com.ubisoft.assassinscreed.identity.rar`) was
+found to hold the full 16-file High set — see
+`tools/high_env_uids.txt` for CDN names + cache UIDs. Status: High sunny
+retrieved and verified byte-exact vs the dict (113,627,464 bytes, UnityRaw);
+device test (push + quality flip) pending. Env files can also be pulled
+individually from that RAR without downloading it whole: each file's byte
+range walks via the RAR header table, and a single-file RAR (signature +
+main head + file header/data + ENDARC) extracts with 7z.
+
 **3. App-private (`/data/user/0/...`) — nothing to do:**
 Only `files/`, `cache/`, `shared_prefs/` (~913B prefs xml), `code_cache/`.
 Tiny Unity/player state. Unreadable over adb (package is not debuggable) —

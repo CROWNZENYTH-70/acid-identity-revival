@@ -1,0 +1,18 @@
+# High env bundles: CDN name + cache UID (source: MEGA com.ubisoft.assassinscreed.identity.rar catalogue, ACID_2.8.2_372 revision)
+# sunny verified byte-exact vs AssetBundleDict (113627464 bytes, UnityRaw, Nov-2016 stamp)
+AssetBundles/EnvAnimus_AnimusGlobe_High_Env_AndroidETC2.unity3d 4dc1e08b-ca4f-46ae-b66c-267a5a1b8f0b
+AssetBundles/EnvAnimus_TutorialScene_01_High_Env_AndroidETC2.unity3d 0db1780c-1f7a-4f54-9eef-6fca1e5cd9f6
+AssetBundles/EnvAnimus_TutorialScene_02_High_Env_AndroidETC2.unity3d 04d0e776-fd25-4e47-93a7-807c1149b3df
+AssetBundles/EnvAnimus_TutorialScene_03_High_Env_AndroidETC2.unity3d c028e963-eed9-434d-8e62-a831a7e59922
+AssetBundles/EnvItaly_Firenze_palazzo_daytime_High_Env_AndroidETC2.unity3d e8503f85-555b-47bb-894d-2d2ae3068fe7
+AssetBundles/EnvItaly_Firenze_santacroce_Tutorial_High_Env_AndroidETC2.unity3d 9a7e0012-08cc-41a6-a9f5-6d83b0832cdf
+AssetBundles/EnvItaly_Firenze_santacroce_stormy_High_Env_AndroidETC2.unity3d a2ad461f-ebee-48f5-b501-f78785d22dfa
+AssetBundles/EnvItaly_Firenze_santacroce_sunny_High_Env_AndroidETC2.unity3d a3f3d1c2-825e-4045-8ea7-ad451e9a5e42
+AssetBundles/EnvItaly_Forli_dusk_High_Env_AndroidETC2.unity3d 0d85654e-4be7-43ed-8ef1-d738d3cd0464
+AssetBundles/EnvItaly_Forli_siege_High_Env_AndroidETC2.unity3d 4212c604-4876-476b-89af-6621dc88c61e
+AssetBundles/EnvItaly_MonteRiggioni_DayTime_High_Env_AndroidETC2.unity3d 16c904de-abfd-45a8-99f0-4961d09a2ceb
+AssetBundles/EnvItaly_MonteRiggioni_NightTime_High_Env_AndroidETC2.unity3d e183625d-8fb6-43a6-bc32-55290ab80999
+AssetBundles/EnvItaly_Roma_Castello_SantAngelo_Overcast_High_Env_AndroidETC2.unity3d 5afc4d27-8cdf-48e2-a922-1732fa638fc8
+AssetBundles/EnvItaly_Roma_Castello_SantAngelo_stormy_High_Env_AndroidETC2.unity3d e2d756bf-4216-44dc-949b-a64fe2069faf
+AssetBundles/EnvItaly_Roma_Coloseum_Afternoon_High_Env_AndroidETC2.unity3d f169e14a-1a9e-4526-9377-f070e39e4f11
+AssetBundles/EnvItaly_Roma_Coloseum_Foggy_High_Env_AndroidETC2.unity3d caabdcf9-cecd-47e4-bcf1-3c3fa0f34804
