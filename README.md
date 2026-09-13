@@ -6,6 +6,14 @@ Firenze mission with working enemy AI, combat, and death.
 
 Proven on-device: boot → spawn → 3 guards fight back → killable. No servers.
 
+## Demo
+
+- Hub boot (Animus): _YouTube link here_
+- Tutorial loading → Firenze fight (3 guards): _YouTube link here_
+
+Upload demos to YouTube (unlisted or public) and replace the lines above.
+Keep videos off GitHub itself — 500M+ files exceed repo limits.
+
 ## What works
 
 - Offline boot (local profile, local data URL, no Play Games sign-in)
