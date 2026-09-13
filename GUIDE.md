@@ -88,12 +88,13 @@ storage. Verified live via adb. There are three locations:
 ```
 Only ~800K. The patcher redirects `BuildDefinition.get_Url` here, so the
 GameDB / FirstContact / dict lookups resolve locally. We never modify these
-7 files — only `Missions/tutorial_0001.bin` is ours. They must come from a
-COMPLETE cache dump. Warning: the IA `AC-Identity.zip` alone is NOT enough
-— checked against its index, it holds only the bundle cache, shader cache,
-and state files, but NO GameDB / dict / FirstContact files, and the CDN now
-answers 401 without auth. Our files came from a fuller ~700MB dump. If your
-dump lacks them, first boot dies at `FetchData` — source a complete dump.
+7 files — only `Missions/tutorial_0001.bin` is ours. They come from the SAME
+IA `AC-Identity.zip`, not a separate source: the zip holds them as UID-named
+cache entries, and the original setup renamed them via the catalogue's URL
+table (verified: all 7 sizes match IA entries byte-for-byte, e.g.
+`GameDB_AndroidETC2.bin` = 235536 bytes = entry `6926e03d…`). So one dump is
+enough — no CDN access needed. If your dump lacks them, first boot dies at
+`FetchData`.
 
 **2. App-external bundle cache (the real 1.4G) — you must push this:**
 ```
