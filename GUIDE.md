@@ -66,6 +66,32 @@ from the 127 `NpcData` defs, add an alias row, add an `Npc(...)` line.
 (-50, 5, -50) is the locked spawn — ground level, room to move, guards
 together. Found by probing; Y=5 grabs streets, Y=40 grabs rooftops.
 
+## Device cache layout
+
+The patched build reads game data from shared storage (not app-private):
+
+```
+/storage/emulated/0/ACID_Revival/
+  boot.log                 # created on launch; real errors only
+  AcierData/
+    AssetBundleDict_AndroidDXT.xml
+    AssetBundleDict_AndroidETC2.xml
+    AssetBundleDict_AndroidGeneric.xml
+    FirstContact_Android.xml
+    GameDB_AndroidDXT.bin
+    GameDB_AndroidETC2.bin
+    GameDB_AndroidGeneric.bin
+    Missions/
+      tutorial_0001.bin    # ours — ship or rebuild, see above
+```
+
+The 7 metadata files come from your own cache copy (e.g. the IA
+`AC-Identity.zip`) — we never modify them. Large asset bundles
+(environments, outfits) resolve through the game's cache manager at boot;
+as long as the cache copy is complete, no manual bundle placement is needed.
+The stock IA instructions say extract to `/Android/data/` — for THIS build,
+the `AcierData/` folder must land at the `ACID_Revival/` path above instead.
+
 ## Critical rule: always patch pristine files
 
 The patcher expects CLEAN `Managed/` input. Never run it on an
