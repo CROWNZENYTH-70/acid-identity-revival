@@ -66,10 +66,12 @@ from the 127 `NpcData` defs, add an alias row, add an `Npc(...)` line.
 (-50, 5, -50) is the locked spawn — ground level, room to move, guards
 together. Found by probing; Y=5 grabs streets, Y=40 grabs rooftops.
 
-## Device cache layout
+## Device data layout (3 locations — read this, it matters)
 
-The patched build reads game data from shared storage (not app-private):
+You were right to flag this: the game does NOT read everything from shared
+storage. Verified live via adb. There are three locations:
 
+**1. Shared metadata (our patch target) — you place this:**
 ```
 /storage/emulated/0/ACID_Revival/
   boot.log                 # created on launch; real errors only
@@ -84,13 +86,32 @@ The patched build reads game data from shared storage (not app-private):
     Missions/
       tutorial_0001.bin    # ours — ship or rebuild, see above
 ```
+Only ~800K. The patcher redirects `BuildDefinition.get_Url` here, so the
+GameDB / FirstContact / dict lookups resolve locally. We never modify these
+7 files — only `Missions/tutorial_0001.bin` is ours.
 
-The 7 metadata files come from your own cache copy (e.g. the IA
-`AC-Identity.zip`) — we never modify them. Large asset bundles
-(environments, outfits) resolve through the game's cache manager at boot;
-as long as the cache copy is complete, no manual bundle placement is needed.
-The stock IA instructions say extract to `/Android/data/` — for THIS build,
-the `AcierData/` folder must land at the `ACID_Revival/` path above instead.
+**2. App-external bundle cache (the real 1.4G) — you must push this:**
+```
+/storage/emulated/0/Android/data/com.ubisoft.assassinscreed.identity/
+  files/cache/             # 105 UID-named bundle files + catalogue.bin (~1.4G)
+  files/localstorage.json  # profile/progress state (tiny, game-written)
+  files/track/tracking.bin # analytics queue (tiny, game-written)
+  cache/UnityShaderCache/  # 329 compiled shaders (~8.6M, game-written)
+```
+The cache manager (`Manager.BaseDir = SavedDataDir + "/cache/"`) reads
+bundles ONLY from here. Push your own cache copy's bundle files to
+`files/cache/` via adb — nothing in this repo fetches them, and the shared
+folder above can never substitute for them.
+
+**3. App-private (`/data/user/0/...`) — nothing to do:**
+Only `files/`, `cache/`, `shared_prefs/` (~913B prefs xml), `code_cache/`.
+Tiny Unity/player state. Unreadable over adb (package is not debuggable) —
+no root needed, leave it alone; the game manages it.
+
+The stock IA instructions ("extract to `/Android/data/`") remain correct
+for the bundle cache (location 2). What changed for THIS build: the 7
+metadata files must ALSO exist at the `ACID_Revival/AcierData/` path
+(location 1) instead of only inside the app folders.
 
 ## Critical rule: always patch pristine files
 
