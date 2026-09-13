@@ -68,8 +68,7 @@ together. Found by probing; Y=5 grabs streets, Y=40 grabs rooftops.
 
 ## Device data layout (3 locations — read this, it matters)
 
-You were right to flag this: the game does NOT read everything from shared
-storage. Verified live via adb. There are three locations:
+The game does NOT read everything from shared storage. Verified live via adb. There are three locations:
 
 **1. Shared metadata (our patch target) — you place this:**
 ```
@@ -143,5 +142,4 @@ the full log plus which APK (hub/freeroam) and mission were used.
 ## Contributing
 
 Pick an open issue, discuss in Discussions, keep PRs to `patch/` +
-`mission/` + docs. Stay anonymous-safe: no real emails, no personal paths,
-no game binaries. See Legal in README.
+`mission/` + docs. This repo does not contains any game binaries. See Legal in README.
