@@ -43,8 +43,9 @@ apksigner sign --ks work/revival.keystore --ks-pass pass:CHANGE_ME \
   --ks-key-alias acid --key-pass pass:CHANGE_ME work/ACID-revival.apk
 
 # 4. mission (edit spawn/guids in mission/Program.cs first)
-# point HintPaths in mission/mission.csproj at YOUR Managed/ dir, then:
-dotnet run --project mission -- work/Missions/tutorial_0001.bin
+dotnet run --project mission \
+  -p:ManagedDir="$PWD/apk_dec/assets/bin/Data/Managed" \
+  -- work/Missions/tutorial_0001.bin
 ```
 
 Install the APK, push the mission to

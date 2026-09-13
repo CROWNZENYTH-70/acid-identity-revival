@@ -5,17 +5,19 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Override: dotnet run -p:ManagedDir=PATH (your decoded APK Managed dir) -->
+    <ManagedDir Condition="'$(ManagedDir)' == ''">../apk_out/assets/bin/Data/Managed</ManagedDir>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="protobuf-net">
-      <HintPath>../apk_out/assets/bin/Data/Managed/protobuf-net.dll</HintPath>
+      <HintPath>$(ManagedDir)/protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="AcierProtocol">
-      <HintPath>../apk_out/assets/bin/Data/Managed/AcierProtocol.dll</HintPath>
+      <HintPath>$(ManagedDir)/AcierProtocol.dll</HintPath>
     </Reference>
     <Reference Include="AcierProtocolSerializer">
-      <HintPath>../apk_out/assets/bin/Data/Managed/AcierProtocolSerializer.dll</HintPath>
+      <HintPath>$(ManagedDir)/AcierProtocolSerializer.dll</HintPath>
     </Reference>
   </ItemGroup>
 

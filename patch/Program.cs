@@ -133,11 +133,6 @@ void PatchMain(string[] args)
         });
     }
     var traceRef = mod.ImportReference(traceMethod);
-    void EmitTrace(ILProcessor il, string msg)
-    {
-        il.Emit(OpCodes.Ldstr, msg);
-        il.Emit(OpCodes.Call, traceRef);
-    }
 
     // generic setter emitters: object must be loaded before calling these
     void SetS(ILProcessor il, string typeFull, string prop, string v)
