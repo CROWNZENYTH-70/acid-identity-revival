@@ -14,7 +14,9 @@ Proven on-device: boot → spawn → 3 guards fight back → killable. No server
 ## What works
 
 - Offline boot (local profile, local data URL, no Play Games sign-in)
-- Animus hub boot (default) or direct-to-mission boot (`freeroam` flag)
+- Animus hub boot (default) or direct-to-mission boot (`freeroam` flag).
+  Note: the hub itself has nothing working except Settings — it is a
+  boot proof, not gameplay. Playable content is the Firenze mission.
 - Custom `tutorial_0001.bin` mission: player spawn + 3 live enemies
   (papal guard, guard captain, crossbowman) with precache → behavior tree →
   stats → attack
