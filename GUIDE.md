@@ -89,12 +89,20 @@ storage. Verified live via adb. There are three locations:
 Only ~800K. The patcher redirects `BuildDefinition.get_Url` here, so the
 GameDB / FirstContact / dict lookups resolve locally. We never modify these
 7 files — only `Missions/tutorial_0001.bin` is ours. They come from the SAME
-IA `AC-Identity.zip`, not a separate source: the zip holds them as UID-named
-cache entries, and the original setup renamed them via the catalogue's URL
-table (verified: all 7 sizes match IA entries byte-for-byte, e.g.
-`GameDB_AndroidETC2.bin` = 235536 bytes = entry `6926e03d…`). So one dump is
-enough — no CDN access needed. If your dump lacks them, first boot dies at
-`FetchData`.
+dump, not a separate source: dumps store downloads as UID-named files and
+the name<->uid mapping lives in `files/cache/catalogue.bin`. Recover them
+with the bundled tool (stdlib only, no deps):
+
+```
+python3 tools/extract_metadata.py <path-to>/files/cache ./AcierData
+```
+
+It parses the catalogue's URL table, copies out the 7 files, and prints a
+per-file report (`[catalogue]` = resolved from your dump,
+`[known-uid]` = IA-revision fallback). Verified: 6/6 outputs byte-identical
+(md5) to a working install, and FirstContact resolves via catalogue on a
+pristine dump. If it reports anything MISSing, your dump is incomplete —
+first boot dies at `FetchData`.
 
 **2. App-external bundle cache (the real 1.4G) — you must push this:**
 ```
