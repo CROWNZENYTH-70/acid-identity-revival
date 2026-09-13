@@ -1,10 +1,12 @@
 # never publish game files, keys, or build outputs
+# (exception: mission/tutorial_0001.bin is 100% our authoring, ships as example)
 *.apk
 *.idsig
 *.ap_
 *.dex
 *.dll
 *.bin
+!mission/tutorial_0001.bin
 *.keystore
 *.jks
 AcierData/

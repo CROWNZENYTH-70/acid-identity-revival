@@ -6,6 +6,10 @@ Firenze mission with working enemy AI, combat, and death.
 
 Proven on-device: boot → spawn → 3 guards fight back → killable. No servers.
 
+See `GUIDE.md` for how it works, where the mission file goes, and how to
+contribute. A ready-made `mission/tutorial_0001.bin` (our authoring) ships
+in the repo — copy it to the device path in step 5, or rebuild your own.
+
 ## Demo
 
 - Hub boot (Animus): https://github.com/CROWNZENYTH-70/acid-identity-revival/releases/download/demo-v1/demo-hub.mp4
