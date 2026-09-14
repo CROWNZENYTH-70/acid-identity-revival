@@ -4,7 +4,9 @@ Offline patcher + mission builder for Assassin's Creed Identity (Android).
 Boot past the dead servers into the Animus hub or straight into a playable
 Firenze mission with working enemy AI, combat, and death.
 
-Proven on-device: boot → spawn → 3 guards fight back → killable. No servers.
+Proven on-device: boot → spawn → 3 guards fight back → killable, plus a
+walking crowd (3 women + 1 mercenary) and the High-quality Santacroce env
+at a steady 58–59 fps. No servers.
 
 See `GUIDE.md` for how it works, where the mission file goes, and how to
 contribute. A ready-made `mission/tutorial_0001.bin` (our authoring) ships
@@ -24,7 +26,11 @@ in the repo — copy it to the device path in step 5, or rebuild your own.
 - Custom `tutorial_0001.bin` mission: player spawn + 3 live enemies
   (papal guard, guard captain, crossbowman) with precache → behavior tree →
   stats → attack
-- 60 fps mission cap (was 25), navmesh spawn snap, Low+ETC2 quality lock
+- 60 fps mission cap (was 25), navmesh spawn snap, ETC2 texture lock
+- Crowd alive: bad-pick null-skip, live-guid pool (3 women + mercenary),
+  stays enabled during missions, crowd quality 0.7
+- High envs: verified on-device via content swap under the Low cache UID +
+  catalogue size patch (see `GUIDE.md`); no fps cost on Santacroce sunny
 - 2 real gameplay fixes: mission-guid → live NPC alias, lone-NPC
   formation null-check
 
@@ -72,11 +78,13 @@ launch. Crash/error log (only on real errors) lands at
 
 ## Known issues (good first contributions)
 
-- Crowd disabled (`CrowdDensity = 0`): `Crowd.SpawnCrowdCharacter` NREs on
-  random guid → null `HumanoidDef`. Needs the same null-check treatment.
 - `ParcourHelper.CheckCivilianCover` NRE spam (player-side, pre-existing).
 - Patrol routes unverified (`MissionNpcFormation` + `PatrolData` wiring).
-- Quality: currently locked to Low envs; High bundles untested on-device.
+- Male crowd variety: only 1 male body (`special_npc_mercenary_01`) ships in
+  the offline GameDB; male civilian defs exist but their bodies were never
+  dumped. Spawning male civilians as mission NPCs is an open experiment.
+- Remaining 15 High envs untested (only Santacroce sunny verified;
+  UIDs in `tools/high_env_uids.txt`).
 
 ## Legal
 

@@ -133,6 +133,11 @@ void PatchMain(string[] args)
         });
     }
     var traceRef = mod.ImportReference(traceMethod);
+    void EmitTrace(ILProcessor il, string msg)
+    {
+        il.Emit(OpCodes.Ldstr, msg);
+        il.Emit(OpCodes.Call, traceRef);
+    }
 
     // generic setter emitters: object must be loaded before calling these
     void SetS(ILProcessor il, string typeFull, string prop, string v)
@@ -537,6 +542,7 @@ void PatchMain(string[] args)
         var qsT = Find(acier.MainModule, "AcierProtocol.QualitySettings");
         var setTex = mod.ImportReference(qsT.Properties.First(p => p.Name == "textureType").SetMethod);
         var setQ = mod.ImportReference(qsT.Properties.First(p => p.Name == "assetBundleQuality").SetMethod);
+        var setCrowd = mod.ImportReference(qsT.Properties.First(p => p.Name == "crowdQuality").SetMethod);
         var ret = m.Body.Instructions.Last(i => i.OpCode == OpCodes.Ret);
         il.InsertBefore(ret, il.Create(OpCodes.Ldarg_0));
         il.InsertBefore(ret, il.Create(OpCodes.Call, getQ));
@@ -546,6 +552,16 @@ void PatchMain(string[] args)
         il.InsertBefore(ret, il.Create(OpCodes.Call, getQ));
         il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_1));
         il.InsertBefore(ret, il.Create(OpCodes.Callvirt, setQ));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldarg_0));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, getQ));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 0.7f));
+        il.InsertBefore(ret, il.Create(OpCodes.Callvirt, setCrowd));
+        // ApplyRenderQuality copies QualitySettings.crowdQuality -> Crowd.CrowdQuality
+        // BEFORE our set above, so set the live static too (else pool stays ~4).
+        var crowdT0 = Find(mod, "Assets.Scripts.Crowd.Crowd");
+        var setLive = mod.ImportReference(crowdT0.Methods.First(mt => mt.Name == "set_CrowdQuality"));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 0.7f));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setLive));
         Console.WriteLine("patched ApplyRenderQuality");
     }
 
@@ -809,7 +825,7 @@ void PatchMain(string[] args)
         {
             ("520620a5-024d-4633-aaf8-21a5f0db7903", -1861353487), // GuardA -> enemy_papal_medici
             ("2d2ca21b-99e9-4a71-ad13-68dd5748574c", -1600799789), // GuardB -> enemy_guardcaptain_medici
-            ("15c667c9-4ec9-4044-84c7-965cf31ba7d7", -1847913466), // GuardC -> enemy_crossbowman_medici
+            ("d91147f6-5386-4ba7-b5b2-0334051fac5b", -1847913466), // GuardC -> enemy_crossbowman_medici (unused guid, frees crowd[0])
         };
         foreach (var (g, h) in ((System.Collections.Generic.IEnumerable<(string guid, int hash)>)aliases).Reverse())
         {
@@ -842,6 +858,88 @@ void PatchMain(string[] args)
         nil.InsertBefore(contT, nil.Create(OpCodes.Pop));
         nil.InsertBefore(contT, nil.Create(OpCodes.Br, skipT));
         Console.WriteLine("null-checked formation in NpcStatsHelper");
+    }
+    // Crowd: random guid picks that aren't live HumanoidDefs nulled the whole
+    // SpawnCrowd loop (NRE at item.CharType aborted mission load -> 100% hang).
+    // Skip bad picks instead: return null, caller ignores the list anyway.
+    {
+        var crowdT = Find(mod, "Assets.Scripts.Crowd.Crowd");
+        var sm = crowdT.Methods.First(mt => mt.Name == "SpawnCrowdCharacter" && mt.Parameters.Count == 0);
+        var sil = sm.Body.GetILProcessor();
+        var gameIdDef = Find(mod, "Database.GameID").Resolve();
+        var isValid = mod.ImportReference(gameIdDef.Methods.First(mt => mt.Name == "IsValid" && mt.IsStatic && mt.Parameters.Count == 1));
+        Mono.Cecil.Cil.VariableDefinition LocalOf(Mono.Cecil.Cil.Instruction st)
+        {
+            if (st.Operand is Mono.Cecil.Cil.VariableDefinition vd) return vd;
+            var code = st.OpCode.Code;
+            int idx = (int)code - (int)Mono.Cecil.Cil.Code.Stloc_0;
+            if (idx < 0 || idx > 3) throw new Exception("not an stloc");
+            return sm.Body.Variables[idx];
+        }
+        void SkipIfBad(Mono.Cecil.Cil.Instruction call, bool useIsValid)
+        {
+            var st = call.Next;
+            while (st != null && !(st.OpCode.Code >= Mono.Cecil.Cil.Code.Stloc_0 && st.OpCode.Code <= Mono.Cecil.Cil.Code.Stloc_S)) st = st.Next;
+            if (st == null) throw new Exception("no stloc after call");
+            var v = LocalOf(st);
+            var cont = st.Next;
+            if (useIsValid)
+            {
+                sil.InsertBefore(cont, sil.Create(OpCodes.Ldloc, v));
+                sil.InsertBefore(cont, sil.Create(OpCodes.Call, isValid));
+                sil.InsertBefore(cont, sil.Create(OpCodes.Brtrue, cont));
+            }
+            else
+            {
+                sil.InsertBefore(cont, sil.Create(OpCodes.Ldloc, v));
+                sil.InsertBefore(cont, sil.Create(OpCodes.Brtrue, cont));
+            }
+            sil.InsertBefore(cont, sil.Create(OpCodes.Ldnull));
+            sil.InsertBefore(cont, sil.Create(OpCodes.Ret));
+        }
+        var findCall = sm.Body.Instructions.First(i => (i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt) && i.Operand.ToString().Contains("FindGameIdFromGuid"));
+        SkipIfBad(findCall, true);
+        var getItem = sm.Body.Instructions.First(i => (i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt) && i.Operand.ToString().Contains("GetItem"));
+        SkipIfBad(getItem, false);
+        Console.WriteLine("null-skipped bad crowd picks");
+    }
+    // Crowd alive: GuidList had 10 entries but only 3 are live HumanoidDefs,
+    // so most random picks died even with the skip (empty streets). Replace
+    // with live guids only -> every spawn survives. Mercenary test: male
+    // special_npc_mercenary_01 first so quality 0.7 pool (indices 0-2)
+    // includes him. Keep InProgress crowd enabled (missions blank streets
+    // by design, we want alive).
+    {
+        var csT = Find(mod, "Assets.Scripts.Crowd.CrowdSettings");
+        var cctor = csT.Methods.First(mt => mt.Name == ".cctor");
+        var cil = cctor.Body.GetILProcessor();
+        var cRet = cctor.Body.Instructions.Last(i => i.OpCode == OpCodes.Ret);
+        var guidField = csT.Fields.First(f => f.Name == "GuidList");
+        var live = new[]
+        {
+            "58c1d7ef-4e26-4dca-8667-6aae65cee5e3",
+            "15c667c9-4ec9-4044-84c7-965cf31ba7d7",
+            "86d505ad-c3ba-43ac-a5b9-101fff12be84",
+            "ddac503d-625f-486e-a56d-7c552f579cbf",
+        };
+        cil.InsertBefore(cRet, cil.Create(OpCodes.Ldc_I4_4));
+        cil.InsertBefore(cRet, cil.Create(OpCodes.Newarr, strType));
+        for (int gi = 0; gi < live.Length; gi++)
+        {
+            cil.InsertBefore(cRet, cil.Create(OpCodes.Dup));
+            cil.InsertBefore(cRet, gi switch { 0 => cil.Create(OpCodes.Ldc_I4_0), 1 => cil.Create(OpCodes.Ldc_I4_1), 2 => cil.Create(OpCodes.Ldc_I4_2), 3 => cil.Create(OpCodes.Ldc_I4_3), _ => cil.Create(OpCodes.Ldc_I4, gi) });
+            cil.InsertBefore(cRet, cil.Create(OpCodes.Ldstr, live[gi]));
+            cil.InsertBefore(cRet, cil.Create(OpCodes.Stelem_Ref));
+        }
+        cil.InsertBefore(cRet, cil.Create(OpCodes.Stsfld, guidField));
+        Console.WriteLine("crowd GuidList -> mercenary + 3 females");
+        var crowdT2 = Find(mod, "Assets.Scripts.Crowd.Crowd");
+        var omc = crowdT2.Methods.First(mt => mt.Name == "OnMissionChanged" && mt.Parameters.Count == 1);
+        omc.Body.Instructions.Clear(); omc.Body.ExceptionHandlers.Clear();
+        omc.Body.Variables.Clear(); omc.Body.InitLocals = false;
+        var oil = omc.Body.GetILProcessor();
+        oil.Emit(OpCodes.Ret);
+        Console.WriteLine("crowd stays enabled InProgress");
     }
     // Spawn/lifecycle/startup entry traces retired. Dropped for clean build.
 

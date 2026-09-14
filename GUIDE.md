@@ -55,7 +55,9 @@ at `GameDB.FindGameIdFromGuid` entry:
 
 - GuardA `520620a5-...` → `enemy_papal_medici`
 - GuardB `2d2ca21b-...` → `enemy_guardcaptain_medici`
-- GuardC `15c667c9-...` → `enemy_crossbowman_medici`
+- GuardC `d91147f6-...` (unused guid) → `enemy_crossbowman_medici`.
+  Note: GuardC was moved off `15c667c9-...` because that guid doubles as
+  crowd pool slot #0 — aliasing it hijacked a civilian lookup.
 
 Plus a null-check in `NpcStatsHelper` so lone NPCs (no formation parent)
 don't abort stats init. To add/change an enemy: pick a live `Enemy_` name
@@ -116,15 +118,19 @@ bundles ONLY from here. Push your own cache copy's bundle files to
 `files/cache/` via adb — nothing in this repo fetches them, and the shared
 folder above can never substitute for them.
 
-**High-quality envs:** every scene ships Low + High variants, but most dumps
-are Low-only. A MEGA dump (`com.ubisoft.assassinscreed.identity.rar`) was
-found to hold the full 16-file High set — see
-`tools/high_env_uids.txt` for CDN names + cache UIDs. Status: High sunny
-retrieved and verified byte-exact vs the dict (113,627,464 bytes, UnityRaw);
-device test (push + quality flip) pending. Env files can also be pulled
-individually from that RAR without downloading it whole: each file's byte
-range walks via the RAR header table, and a single-file RAR (signature +
-main head + file header/data + ENDARC) extracts with 7z.
+**High-quality envs — VERIFIED ON DEVICE:** Santacroce sunny High runs at a
+steady 58–59 fps with visibly sharper textures. Method (no patch change —
+the game keeps requesting the Low URL): overwrite the Low bundle file with
+the High bytes under the SAME cache UID, then patch the two LE64 size
+fields in `files/cache/catalogue.bin` for that entry (old size →
+113,627,464), because `Manager.Verify` checks size (not content) and
+deletes unregistered files. Back up the Low file first (one `cp` on
+device). The remaining 15 High envs are mapped in
+`tools/high_env_uids.txt` (same procedure per scene). Source: a MEGA dump
+(`com.ubisoft.assassinscreed.identity.rar`) holding the full 16-file High
+set — individual files are retrievable without downloading it whole: each
+file's byte range walks via the RAR header table, and a single-file RAR
+(signature + main head + file header/data + ENDARC) extracts with 7z.
 
 **3. App-private (`/data/user/0/...`) — nothing to do:**
 Only `files/`, `cache/`, `shared_prefs/` (~913B prefs xml), `code_cache/`.
@@ -148,6 +154,17 @@ missing player). If a build misbehaves, re-decode from your original APK.
 Only real errors land at `/storage/emulated/0/ACID_Revival/boot.log`
 (marker + Unity exceptions). No per-file spam. If reporting a bug, attach
 the full log plus which APK (hub/freeroam) and mission were used.
+
+## Crowd: what lives offline
+
+The frozen GameDBs ship only 4 crowd-capable bodies: 3 women
+(`crowd_civilian_female_01/02/03`) + 1 man (`special_npc_mercenary_01`,
+verified walking on-device). The other 7 original pool guids resolve to
+NpcDefinitions, not bodies — dead picks that the patcher now skips. Male
+civilian defs exist in `NpcData` but their bodies were never dumped, so a
+mixed street is currently 3 women + 1 mercenary. The crowd pool, the
+InProgress enable, and crowd quality (0.7) are all patcher-controlled; the
+mission sets density 30 / max 15.
 
 ## Contributing
 
