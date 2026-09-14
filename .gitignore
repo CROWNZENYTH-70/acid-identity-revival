@@ -7,6 +7,7 @@
 *.dll
 *.bin
 !mission/tutorial_0001.bin
+!mission/missions/*.bin
 *.keystore
 *.jks
 AcierData/

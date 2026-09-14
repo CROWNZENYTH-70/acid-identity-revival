@@ -5,26 +5,38 @@ using ProtoBuf.Meta;
 // authors Missions/tutorial_0001.bin (free-roam tutorial v1) using the game's own
 // protobuf contracts + serializer. No format RE needed.
 string outFile = args.Length > 0 ? args[0] : "tutorial_0001.bin";
+string sceneName = args.Length > 1 ? args[1] : "Firenze_santacroce_sunny";
+string regionName = args.Length > 2 ? args[2] : "Firenze_SantaCroce";
+string ageName = args.Length > 3 ? args[3] : "Italy";
+string moodName = args.Length > 4 ? args[4] : "Sunny";
+bool noGuards = args.Contains("--no-guards");
+string baseName = Path.GetFileNameWithoutExtension(outFile);
+string missionUrl = "Missions/" + Path.GetFileName(outFile);
+// Main mission keeps locked spawn; test missions probe at origin with navmesh snap.
+bool isMain = baseName == "tutorial_0001" && sceneName == "Firenze_santacroce_sunny";
+float px = isMain ? -50f : 0f;
+float py = isMain ? 5f : 40f;
+float pz = isMain ? -50f : 0f;
 
 var root = new MissionRootContent
 {
     MissionType = EMissionType.Mission_EMissionType,
-    Scene = "Firenze_santacroce_sunny",
+    Scene = sceneName,
     Name = "Tutorial",
-    BaseName = "tutorial_0001",
+    BaseName = baseName,
     GUID = Guid.NewGuid().ToString(),
-    Region = ERegion.Firenze_SantaCroce,
-    Age = EEra.Italy,
-    Mood = EMood.Sunny,
+    Region = Enum.Parse<ERegion>(regionName),
+    Age = Enum.Parse<EEra>(ageName),
+    Mood = Enum.Parse<EMood>(moodName),
     ObjectiveType = EObjectiveType.Find_EObjectiveType,
     MissionKind = EMissionKind.Kill_EMissionKind,
     DifficultyLevel = 1,
     Rank = 1,
-    CrowdDensity = 30,
-    MaxCrowdEntities = 15,
+    CrowdDensity = 40,
+    MaxCrowdEntities = 20,
     BriefingText = string.Empty,
     DebriefingText = string.Empty,
-    MissionUrl = "Missions/tutorial_0001.bin",
+    MissionUrl = missionUrl,
     GenerationTime = DateTime.UtcNow.ToString("o"),
     PlayerAssassinGUID = string.Empty,
     PlayerHirelingGUID = string.Empty,
@@ -37,11 +49,45 @@ var spawn = new MissionPlayerSpawnContent
     MissionBaseContent = new MissionBaseContent { ID = 1, ActivateAtId = -2, RemoveAtId = -2 },
 };
 
+var children = new List<SerializedNode>
+{
+    new SerializedNode
+    {
+        Name = "PlayerSpawn",
+        PositionX = px,
+        PositionY = py,
+        PositionZ = pz,
+        Components = new[]
+        {
+            new SerializedNodeComponent
+            {
+                Type = SerializedNodeComponent.NodeType.NodeType_MissionPlayerSpawnContent,
+                MissionPlayerSpawnContent = spawn,
+            },
+        },
+    },
+};
+if (!noGuards)
+{
+    if (isMain)
+    {
+        children.Add(Npc("GuardA", 2, "520620a5-024d-4633-aaf8-21a5f0db7903", -40, -50, 5f));
+        children.Add(Npc("GuardB", 3, "2d2ca21b-99e9-4a71-ad13-68dd5748574c", -60, -50, 5f));
+        children.Add(Npc("GuardC", 4, "d91147f6-5386-4ba7-b5b2-0334051fac5b", -50, -40, 5f));
+    }
+    else
+    {
+        children.Add(Npc("GuardA", 2, "520620a5-024d-4633-aaf8-21a5f0db7903", 10, 0, 5f));
+        children.Add(Npc("GuardB", 3, "2d2ca21b-99e9-4a71-ad13-68dd5748574c", -10, 0, 5f));
+        children.Add(Npc("GuardC", 4, "d91147f6-5386-4ba7-b5b2-0334051fac5b", 0, 10, 5f));
+    }
+}
+
 var file = new MissionFile
 {
     RootNode = new SerializedNode
     {
-        Name = "tutorial_0001",
+        Name = baseName,
         Components = new[]
         {
             new SerializedNodeComponent
@@ -50,29 +96,7 @@ var file = new MissionFile
                 MissionRootContent = root,
             },
         },
-        Children = new[]
-        {
-            new SerializedNode
-            {
-                Name = "PlayerSpawn",
-                PositionX = -50f,
-                PositionY = 5f,
-                PositionZ = -50f,
-                Components = new[]
-                {
-                    new SerializedNodeComponent
-                    {
-                        Type = SerializedNodeComponent.NodeType.NodeType_MissionPlayerSpawnContent,
-                        MissionPlayerSpawnContent = spawn,
-                    },
-                },
-            },
-            // civilian off for isolation test
-            //Npc("GuardA", 2, "2d2ca21b-99e9-4a71-ad13-68dd5748574c", 10, 0),
-            Npc("GuardA", 2, "520620a5-024d-4633-aaf8-21a5f0db7903", -40, -50, 5f),
-            Npc("GuardB", 3, "2d2ca21b-99e9-4a71-ad13-68dd5748574c", -60, -50, 5f),
-            Npc("GuardC", 4, "d91147f6-5386-4ba7-b5b2-0334051fac5b", -50, -40, 5f),
-        },
+        Children = children.ToArray(),
     },
 };
 

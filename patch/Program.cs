@@ -554,14 +554,80 @@ void PatchMain(string[] args)
         il.InsertBefore(ret, il.Create(OpCodes.Callvirt, setQ));
         il.InsertBefore(ret, il.Create(OpCodes.Ldarg_0));
         il.InsertBefore(ret, il.Create(OpCodes.Call, getQ));
-        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 0.7f));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 0.8f));
         il.InsertBefore(ret, il.Create(OpCodes.Callvirt, setCrowd));
         // ApplyRenderQuality copies QualitySettings.crowdQuality -> Crowd.CrowdQuality
         // BEFORE our set above, so set the live static too (else pool stays ~4).
         var crowdT0 = Find(mod, "Assets.Scripts.Crowd.Crowd");
         var setLive = mod.ImportReference(crowdT0.Methods.First(mt => mt.Name == "set_CrowdQuality"));
-        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 0.7f));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 0.8f));
         il.InsertBefore(ret, il.Create(OpCodes.Call, setLive));
+        // Full-res + bumped shaders: fallback Low profiles render at HALF res
+        // (RenderingUpscaler 0.5x) with Diffuse-only shaders (LOD 200), which
+        // blunts High bundles. Force High-tier presentation; Unity-side calls
+        // must be re-emitted because the original body already ran above.
+        var setDown = mod.ImportReference(qsT.Properties.First(p => p.Name == "downScaling").SetMethod);
+        var setQL = mod.ImportReference(qsT.Properties.First(p => p.Name == "qualityLevel").SetMethod);
+        var setLOD = mod.ImportReference(qsT.Properties.First(p => p.Name == "renderingLOD").SetMethod);
+        il.InsertBefore(ret, il.Create(OpCodes.Ldarg_0));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, getQ));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_0));
+        il.InsertBefore(ret, il.Create(OpCodes.Callvirt, setDown));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldarg_0));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, getQ));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_3));
+        il.InsertBefore(ret, il.Create(OpCodes.Callvirt, setQL));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldarg_0));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, getQ));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4, 400));
+        il.InsertBefore(ret, il.Create(OpCodes.Callvirt, setLOD));
+        var ueAsmQ = AssemblyDefinition.ReadAssembly(Path.Combine(managedDir, "UnityEngine.dll"), new ReaderParameters { AssemblyResolver = resolver });
+        var setTier = mod.ImportReference(Find(ueAsmQ.MainModule, "UnityEngine.QualitySettings").Methods.First(mt => mt.Name == "SetQualityLevel" && mt.Parameters.Count == 2));
+        // Tier 5 (max; fallback table + viewer both reference it): bigger
+        // shadowmaps than tier 3. All presentation overrides above are
+        // re-emitted after this, so only the preset's texture/shadow
+        // resolution survives.
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_5));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_1));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setTier));
+        var shLib = AssemblyDefinition.ReadAssembly(Path.Combine(managedDir, "SharedBaseLib.dll"), new ReaderParameters { AssemblyResolver = resolver });
+        var rsT = Find(shLib.MainModule, "RenderingSettings");
+        var getRS = mod.ImportReference(rsT.Methods.First(mt => mt.Name == "get_Instance"));
+        var setRSLOD = mod.ImportReference(rsT.Methods.First(mt => mt.Name == "set_shaderLOD"));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, getRS));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4, 400));
+        il.InsertBefore(ret, il.Create(OpCodes.Callvirt, setRSLOD));
+        // Safe presentation tweaks (all after SetQualityLevel so they win):
+        // full-res textures, 2x MSAA, aniso off, longer LODs, tight stable shadows.
+        // Tier-3 defaults blunt all of these; High bundles need them.
+        var ueQ = Find(ueAsmQ.MainModule, "UnityEngine.QualitySettings");
+        var setTexLim = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_masterTextureLimit"));
+        var setAniso = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_anisotropicFiltering"));
+        var setAA = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_antiAliasing"));
+        var setLodBias = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_lodBias"));
+        var setShDist = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_shadowDistance"));
+        var setShCasc = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_shadowCascades"));
+        var setShProj = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_shadowProjection"));
+        var setShSplit = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_shadowCascade2Split"));
+        var setShNear = mod.ImportReference(ueQ.Methods.First(mt => mt.Name == "set_shadowNearPlaneOffset"));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_0));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setTexLim));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_0));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setAniso));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_2));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setAA));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 1.5f));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setLodBias));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 15f));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setShDist));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_2));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setShCasc));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_I4_1));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setShProj));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 0.33f));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setShSplit));
+        il.InsertBefore(ret, il.Create(OpCodes.Ldc_R4, 4f));
+        il.InsertBefore(ret, il.Create(OpCodes.Call, setShNear));
         Console.WriteLine("patched ApplyRenderQuality");
     }
 

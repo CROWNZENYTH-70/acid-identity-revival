@@ -11,11 +11,21 @@ at a steady 58–59 fps. No servers.
 See `GUIDE.md` for how it works, where the mission file goes, and how to
 contribute. A ready-made `mission/tutorial_0001.bin` (our authoring) ships
 in the repo — copy it to the device path in step 5, or rebuild your own.
+`mission/missions/` holds 16 self-authored single-spawn test missions, one
+per env (see GUIDE.md “Env test matrix”).
 
 ## Demo
 
 - Hub boot (Animus): https://github.com/CROWNZENYTH-70/acid-identity-revival/releases/download/demo-v1/demo-hub.mp4
 - Tutorial loading → Firenze fight (3 guards): https://github.com/CROWNZENYTH-70/acid-identity-revival/releases/download/demo-v1/demo-fight.mp4
+
+## Screenshots (High envs, on-device)
+
+![Roma Colosseum, afternoon](docs/screenshots/test_colo_aft.jpg)
+![Firenze Santacroce market, crowd walking](docs/screenshots/test_santacroce_tut.jpg)
+![Monteriggioni at night](docs/screenshots/test_monte_night.jpg)
+![Firenze palazzo, daytime](docs/screenshots/test_plazzo_day.jpg)
+![Castel Sant'Angelo bridge](docs/screenshots/test_roma_overcast.jpg)
 
 ## What works
 
@@ -28,9 +38,13 @@ in the repo — copy it to the device path in step 5, or rebuild your own.
   stats → attack
 - 60 fps mission cap (was 25), navmesh spawn snap, ETC2 texture lock
 - Crowd alive: bad-pick null-skip, live-guid pool (3 women + mercenary),
-  stays enabled during missions, crowd quality 0.7
-- High envs: verified on-device via content swap under the Low cache UID +
-  catalogue size patch (see `GUIDE.md`); no fps cost on Santacroce sunny
+  stays enabled during missions, crowd quality 0.8, density 40 / max 20
+- High envs: every dumped High bundle live on-device (16/16 available scenes
+  boot, zero crashes), swapped under the Low cache UID + catalogue size
+  patch — palazzo *nighttime* High was never dumped, stays Low
+  (see `GUIDE.md` + `tools/high_env_uids.txt`)
+- Presentation: full-res (downscaling off), BumpedSpecular shaders (LOD 400),
+  Unity tier 5, 2x MSAA, 15 m stable shadows — steady 57–59 fps
 - 2 real gameplay fixes: mission-guid → live NPC alias, lone-NPC
   formation null-check
 
@@ -69,6 +83,10 @@ apksigner verify work/ACID-revival.apk
 dotnet run --project mission \
   -p:ManagedDir="$PWD/apk_dec/assets/bin/Data/Managed" \
   -- work/Missions/tutorial_0001.bin
+# usage: mission <out.bin> [scene] [region] [age] [mood] [--no-guards]
+# defaults build the main Firenze mission; e.g. a guard-less Forli test:
+# dotnet run --project mission -p:ManagedDir="$PWD/apk_dec/assets/bin/Data/Managed" \
+#   -- work/Missions/test_forli_dusk.bin Forli_dusk Forli Italy Dusk --no-guards
 ```
 
 Install the APK, push the mission to
@@ -83,8 +101,8 @@ launch. Crash/error log (only on real errors) lands at
 - Male crowd variety: only 1 male body (`special_npc_mercenary_01`) ships in
   the offline GameDB; male civilian defs exist but their bodies were never
   dumped. Spawning male civilians as mission NPCs is an open experiment.
-- Remaining 15 High envs untested (only Santacroce sunny verified;
-  UIDs in `tools/high_env_uids.txt`).
+- Palazzo *nighttime* High was never dumped anywhere (not in IA, MEGA, or
+  mod APKs) — that scene stays Low. All other High envs are live.
 
 ## Legal
 

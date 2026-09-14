@@ -25,16 +25,31 @@ files live here or ever will.
   own protobuf contracts. Ships a ready-made `tutorial_0001.bin`.
 - `README.md` — build steps. This file — how it all works.
 
-## The provided mission file
+## The provided mission files
 
 `mission/tutorial_0001.bin` is 100% ours (authored by `mission/Program.cs`,
 not extracted). Contents: Firenze_santacroce_sunny, player spawn at
 (-50, 5, -50), 3 live enemies (papal guard, guard captain, crossbowman),
-crowd off. Place it at:
+crowd density 40 / max 20. Place it at:
 
 ```
-/storage/emulated/0/ACID_Revival/AcierData/Missions/tutorial_0001.bin
+ /storage/emulated/0/ACID_Revival/AcierData/Missions/tutorial_0001.bin
 ```
+
+`mission/missions/` holds 16 more self-authored missions, one per env —
+player-only spawn at origin (navmesh snap lands it), no guards unless
+rebuilt without `--no-guards`. To test a scene on-device without adb: copy
+the test file over `tutorial_0001.bin` in the Missions folder (exact name),
+launch, and restore afterwards.
+
+Rebuild any of them with the mission CLI:
+
+```
+dotnet run --project mission -p:ManagedDir=<Managed> -- <out.bin> [scene] [region] [age] [mood] [--no-guards]
+```
+
+Defaults (`tutorial_0001.bin` + santacroce sunny) reproduce the main
+mission with its locked spawn and 3 guards.
 
 No other cache file is modified — GameDB, bundles, dicts stay byte-identical.
 Rebuild it any time with step 4 of the README; each build gets a fresh root
@@ -118,19 +133,23 @@ bundles ONLY from here. Push your own cache copy's bundle files to
 `files/cache/` via adb — nothing in this repo fetches them, and the shared
 folder above can never substitute for them.
 
-**High-quality envs — VERIFIED ON DEVICE:** Santacroce sunny High runs at a
-steady 58–59 fps with visibly sharper textures. Method (no patch change —
-the game keeps requesting the Low URL): overwrite the Low bundle file with
-the High bytes under the SAME cache UID, then patch the two LE64 size
-fields in `files/cache/catalogue.bin` for that entry (old size →
-113,627,464), because `Manager.Verify` checks size (not content) and
-deletes unregistered files. Back up the Low file first (one `cp` on
-device). The remaining 15 High envs are mapped in
-`tools/high_env_uids.txt` (same procedure per scene). Source: a MEGA dump
-(`com.ubisoft.assassinscreed.identity.rar`) holding the full 16-file High
-set — individual files are retrievable without downloading it whole: each
-file's byte range walks via the RAR header table, and a single-file RAR
-(signature + main head + file header/data + ENDARC) extracts with 7z.
+**High-quality envs — ALL LIVE ON DEVICE (16/16 boot, zero crashes):**
+every dumped High bundle was swapped under its scene's Low cache UID with
+the catalogue size fields patched (see procedure below) — Santacroce sunny,
+stormy and tutorial, palazzo daytime, both Forlis, both Monteriggionis,
+both Sant'Angelos, both Colosseums, plus the 4 Animus scenes. Only palazzo
+*nighttime* stays Low: its High was never dumped in any known source
+(IA, MEGA, mod APKs all checked). Method (no patch change — the game keeps
+requesting the Low URL): overwrite the Low bundle file with the High bytes
+under the SAME cache UID, then patch the two LE64 size fields in
+`files/cache/catalogue.bin` for that entry, because `Manager.Verify`
+checks size (not content) and deletes unregistered files. Back up the Low
+file first (one `cp` on device). UIDs in `tools/high_env_uids.txt`.
+Source: a MEGA dump (`com.ubisoft.assassinscreed.identity.rar`) holding
+the full 16-file High set — individual files are retrievable without
+downloading it whole: each file's byte range walks via the RAR header
+table, and a single-file RAR (signature + main head + file header/data +
+ENDARC) extracts with 7z.
 
 **3. App-private (`/data/user/0/...`) — nothing to do:**
 Only `files/`, `cache/`, `shared_prefs/` (~913B prefs xml), `code_cache/`.
@@ -163,10 +182,29 @@ verified walking on-device). The other 7 original pool guids resolve to
 NpcDefinitions, not bodies — dead picks that the patcher now skips. Male
 civilian defs exist in `NpcData` but their bodies were never dumped, so a
 mixed street is currently 3 women + 1 mercenary. The crowd pool, the
-InProgress enable, and crowd quality (0.7) are all patcher-controlled; the
-mission sets density 30 / max 15.
+InProgress enable, and crowd quality (0.8) are all patcher-controlled; the
+mission sets density 40 / max 20.
+
+## Env test matrix (all 16 boot on-device, zero crashes)
+
+| Mission file | Scene | Notes |
+|---|---|---|
+| `test_animus_globe.bin` | AnimusGlobe | hub scene as mission |
+| `test_tut01/02/03.bin` | TutorialScene 01–03 | particle-void arenas |
+| `test_palazzo_day.bin` | Firenze palazzo daytime | High |
+| `test_palazzo_night.bin` | Firenze palazzo nighttime | Low only (High never dumped) |
+| `test_santacroce_tut.bin` | Firenze santacroce tutorial | High, liveliest street |
+| `test_santacroce_stormy.bin` | Firenze santacroce stormy | High |
+| `test_forli_dusk.bin` / `test_forli_siege.bin` | Forli dusk / siege | High |
+| `test_monte_day.bin` / `test_monte_night.bin` | Monteriggioni day / night | High |
+| `test_roma_overcast.bin` / `test_roma_stormy.bin` | Sant'Angelo overcast / stormy | High |
+| `test_colo_aft.bin` / `test_colo_foggy.bin` | Colosseum afternoon / foggy | High |
+
+Test missions spawn the player at origin (navmesh snap decides landing —
+rooftops happen) with no tuning. Known cosmetic: a floating civilian was
+seen once in roma_stormy (spawn off-navmesh, harmless).
 
 ## Contributing
 
 Pick an open issue, discuss in Discussions, keep PRs to `patch/` +
-`mission/` + docs. This repo does not contains any game binaries. See Legal in README.
+`mission/` + `tools/` + docs. This repo does not contain any game binaries. See Legal in README.
