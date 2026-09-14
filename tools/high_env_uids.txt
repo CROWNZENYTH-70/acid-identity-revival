@@ -16,3 +16,9 @@ AssetBundles/EnvItaly_Roma_Castello_SantAngelo_Overcast_High_Env_AndroidETC2.uni
 AssetBundles/EnvItaly_Roma_Castello_SantAngelo_stormy_High_Env_AndroidETC2.unity3d e2d756bf-4216-44dc-949b-a64fe2069faf
 AssetBundles/EnvItaly_Roma_Coloseum_Afternoon_High_Env_AndroidETC2.unity3d f169e14a-1a9e-4526-9377-f070e39e4f11
 AssetBundles/EnvItaly_Roma_Coloseum_Foggy_High_Env_AndroidETC2.unity3d caabdcf9-cecd-47e4-bcf1-3c3fa0f34804
+# palazzo_nighttime High was NOT in the MEGA catalogue's URL table, but its
+# bytes were sitting unmapped in the same RAR: UID 2b03ed47-... is 92997260
+# bytes, byte-exact vs AssetBundleDict AssetBundleFileSize, UnityRaw 5.x,
+# Nov-2016 stamp, strings confirm Firenze_palazzo_nighttime_High_Android_ETC2.
+# => all 17 High envs now sourced (16 mapped + this one).
+AssetBundles/EnvItaly_Firenze_palazzo_nighttime_High_Env_AndroidETC2.unity3d 2b03ed47-4967-4acf-91f9-4112e1d34618

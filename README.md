@@ -41,7 +41,8 @@ per env (see GUIDE.md “Env test matrix”).
   stays enabled during missions, crowd quality 0.8, density 40 / max 20
 - High envs: every dumped High bundle live on-device (16/16 available scenes
   boot, zero crashes), swapped under the Low cache UID + catalogue size
-  patch — palazzo *nighttime* High was never dumped, stays Low
+  patch — palazzo *nighttime* High was found unmapped in the same MEGA dump
+  (UID `2b03ed47-...`, size byte-exact vs dict) and is queued for its swap
   (see `GUIDE.md` + `tools/high_env_uids.txt`)
 - Presentation: full-res (downscaling off), BumpedSpecular shaders (LOD 400),
   Unity tier 5, 2x MSAA, 15 m stable shadows — steady 57–59 fps
@@ -101,8 +102,9 @@ launch. Crash/error log (only on real errors) lands at
 - Male crowd variety: only 1 male body (`special_npc_mercenary_01`) ships in
   the offline GameDB; male civilian defs exist but their bodies were never
   dumped. Spawning male civilians as mission NPCs is an open experiment.
-- Palazzo *nighttime* High was never dumped anywhere (not in IA, MEGA, or
-  mod APKs) — that scene stays Low. All other High envs are live.
+- Palazzo *nighttime* High: recovered since (unmapped file in the MEGA dump,
+  UID `2b03ed47-...`); swap pending on-device verification. All other High
+  envs are live.
 
 ## Legal
 

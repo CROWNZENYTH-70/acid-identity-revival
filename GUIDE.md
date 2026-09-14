@@ -137,9 +137,12 @@ folder above can never substitute for them.
 every dumped High bundle was swapped under its scene's Low cache UID with
 the catalogue size fields patched (see procedure below) — Santacroce sunny,
 stormy and tutorial, palazzo daytime, both Forlis, both Monteriggionis,
-both Sant'Angelos, both Colosseums, plus the 4 Animus scenes. Only palazzo
-*nighttime* stays Low: its High was never dumped in any known source
-(IA, MEGA, mod APKs all checked). Method (no patch change — the game keeps
+both Sant'Angelos, both Colosseums, plus the 4 Animus scenes. Palazzo
+*nighttime* High was missing from the MEGA catalogue's URL table but its
+bytes were in the same RAR unmapped (`2b03ed47-...`, 92997260 bytes =
+dict size byte-exact, UnityRaw Nov-2016, strings-confirmed) — same swap
+procedure, Low UID `d4775295-...` (verify size 70099692 on-device first;
+catalogue sizes `ec a2 2d 04 …` → `8c 06 8b 05 …`). Method (no patch change — the game keeps
 requesting the Low URL): overwrite the Low bundle file with the High bytes
 under the SAME cache UID, then patch the two LE64 size fields in
 `files/cache/catalogue.bin` for that entry, because `Manager.Verify`
@@ -192,7 +195,7 @@ mission sets density 40 / max 20.
 | `test_animus_globe.bin` | AnimusGlobe | hub scene as mission |
 | `test_tut01/02/03.bin` | TutorialScene 01–03 | particle-void arenas |
 | `test_palazzo_day.bin` | Firenze palazzo daytime | High |
-| `test_palazzo_night.bin` | Firenze palazzo nighttime | Low only (High never dumped) |
+| `test_palazzo_night.bin` | Firenze palazzo nighttime | High (swap per above) |
 | `test_santacroce_tut.bin` | Firenze santacroce tutorial | High, liveliest street |
 | `test_santacroce_stormy.bin` | Firenze santacroce stormy | High |
 | `test_forli_dusk.bin` / `test_forli_siege.bin` | Forli dusk / siege | High |
