@@ -114,6 +114,18 @@ All component/node IDs unique mission-wide (spawns 2–4, formations
 22–24). Rebuild: same CLI, output name `test_patrol` triggers the locked
 spawn (`test_patrolpair` for the pair probe).
 
+## Objectives (verified on-device)
+
+`test_objective.bin` is the gate: 3 guards + a primary `ObjectiveKill`
+(`SlayGuards`, ID 40, targets = spawn IDs 2/3/4, minimum 3). Verified:
+tracker shows “Eliminate the guards ({count} remaining)”, counts down per
+kill, completes at 0. Raw description strings pass through unmapped; the
+main mission now ships the same objective on its walking sentries.
+
+Known behavior: completion plays the intro and follows the hub return
+path, which is server-dead offline → spinloop. Use Retry for a clean
+replay. A clean offline end-of-mission flow is an open contributor item.
+
 ## Spawn coordinates
 
 (-50, 5, -50) is the locked spawn — ground level, room to move, guards
@@ -262,5 +274,13 @@ seen once in roma_stormy (spawn off-navmesh, harmless).
 
 ## Contributing
 
-Pick an open issue, discuss in Discussions, keep PRs to `patch/` +
-`mission/` + `tools/` + docs. This repo does not contain any game binaries. See Legal in README.
+**Status: done, in maintenance.** The revival goal is met; the maintainer
+is not planning further work. Contributions welcome within scope:
+
+- Objectives (escort / interact / timer, chaining, multi-mission arcs).
+- Text story (briefings, annotations) — no voices exist to reuse.
+- Staging, crowd tuning, offline end-of-mission flow, tooling/docs.
+
+Out of scope: open cities, social stealth, acted story, score, servers,
+new maps/assets. Pick an open issue, discuss in Discussions, keep PRs to
+`patch/` + `mission/` + `tools/` + docs. This repo does not contain any game binaries. See Legal in README.

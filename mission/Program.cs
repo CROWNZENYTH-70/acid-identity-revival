@@ -18,9 +18,11 @@ bool isMain = baseName == "tutorial_0001" && sceneName == "Firenze_santacroce_su
 bool isPatrol = baseName == "test_patrol" && sceneName == "Firenze_santacroce_sunny";
 // Paired-patrol probe: two guards sharing one formation node.
 bool isPair = baseName == "test_patrolpair" && sceneName == "Firenze_santacroce_sunny";
-float px = (isMain || isPatrol || isPair) ? -50f : 0f;
-float py = (isMain || isPatrol || isPair) ? 5f : 40f;
-float pz = (isMain || isPatrol || isPair) ? -50f : 0f;
+// Objective gate: kill-3-guards primary objective + tracker check.
+bool isObjective = baseName == "test_objective" && sceneName == "Firenze_santacroce_sunny";
+float px = (isMain || isPatrol || isPair || isObjective) ? -50f : 0f;
+float py = (isMain || isPatrol || isPair || isObjective) ? 5f : 40f;
+float pz = (isMain || isPatrol || isPair || isObjective) ? -50f : 0f;
 
 var root = new MissionRootContent
 {
@@ -76,7 +78,12 @@ if (!noGuards)
     if (isMain)
     {
         // Walking sentries: v3-verified beats (A square loop recentered off
-        // the east wall, B 3-point beat, C brisk beat + watch halt).
+        // the east wall, B 3-point beat, C brisk beat + watch halt)
+        // + SlayGuards primary kill objective (gate-verified: tracker shows,
+        // counts down, completes). One boot file = tutorial + story mission:
+        // hub Start can't load missions offline (needs server), so the
+        // freeroam loop is boot -> play -> complete -> retry; chapters swap
+        // bins manually until in-bin phase chaining lands.
         children.Add(PatrolNpc("GuardA", 2, 12, "520620a5-024d-4633-aaf8-21a5f0db7903",
             -47, -49, 5f, EFormationIterationType.Circeling, new (float, float, int, float, EMovementSpeed)[] {
                 (-52f, -54f, 22, 0.8f, EMovementSpeed.Walk),
@@ -95,6 +102,39 @@ if (!noGuards)
                 (-50f, -46f, 29, 0.3f, EMovementSpeed.Walk),
                 (-50f, -34f, 30, 3.0f, EMovementSpeed.Walk),
             }));
+        children.Add(new SerializedNode
+        {
+            Name = "SlayGuards",
+            PositionX = -50f,
+            PositionY = 5f,
+            PositionZ = -50f,
+            Components = new[]
+            {
+                new SerializedNodeComponent
+                {
+                    Type = SerializedNodeComponent.NodeType.NodeType_ObjectiveKillContent,
+                    ObjectiveKillContent = new ObjectiveKillContent
+                    {
+                        ObjectiveTargetContent = new ObjectiveTargetContent
+                        {
+                            ObjectiveBaseContent = new ObjectiveBaseContent
+                            {
+                                MissionBaseContent = new MissionBaseContent { ID = 40, ActivateAtId = -2, RemoveAtId = -2 },
+                                Description = "Eliminate the guards ({count} remaining)",
+                                ShortDescription = "Eliminate the guards",
+                                SecondaryDescription = string.Empty,
+                                IsPrimaryObjective = true,
+                                IsOptionalObjective = false,
+                                TrackerIcon = EObjectiveType.Kill_EObjectiveType,
+                            },
+                            Targets = new long[] { 2, 3, 4 },
+                        },
+                        Minimum = 3,
+                        DoNotKill = false,
+                    },
+                },
+            },
+        });
     }
     else if (isPatrol)
     {
@@ -142,6 +182,49 @@ if (!noGuards)
                 (-60f, -50f, 23, 1.0f, EMovementSpeed.Walk),
                 (-52f, -50f, 24, 0.5f, EMovementSpeed.Walk),
             }));
+    }
+    else if (isObjective)
+    {
+        // Objective gate: 3 plain guards (proven spots) + primary kill
+        // objective targeting their spawn IDs. Descriptions are raw text
+        // (ParseStringToLocaKey/Get pass non-keys through, {count} maps
+        // to remaining via ObjectiveKill.GetStringMapper).
+        children.Add(Npc("GuardA", 2, "520620a5-024d-4633-aaf8-21a5f0db7903", -40, -50, 5f));
+        children.Add(Npc("GuardB", 3, "2d2ca21b-99e9-4a71-ad13-68dd5748574c", -60, -50, 5f));
+        children.Add(Npc("GuardC", 4, "d91147f6-5386-4ba7-b5b2-0334051fac5b", -50, -40, 5f));
+        children.Add(new SerializedNode
+        {
+            Name = "SlayGuards",
+            PositionX = -50f,
+            PositionY = 5f,
+            PositionZ = -50f,
+            Components = new[]
+            {
+                new SerializedNodeComponent
+                {
+                    Type = SerializedNodeComponent.NodeType.NodeType_ObjectiveKillContent,
+                    ObjectiveKillContent = new ObjectiveKillContent
+                    {
+                        ObjectiveTargetContent = new ObjectiveTargetContent
+                        {
+                            ObjectiveBaseContent = new ObjectiveBaseContent
+                            {
+                                MissionBaseContent = new MissionBaseContent { ID = 40, ActivateAtId = -2, RemoveAtId = -2 },
+                                Description = "Eliminate the guards ({count} remaining)",
+                                ShortDescription = "Eliminate the guards",
+                                SecondaryDescription = string.Empty,
+                                IsPrimaryObjective = true,
+                                IsOptionalObjective = false,
+                                TrackerIcon = EObjectiveType.Kill_EObjectiveType,
+                            },
+                            Targets = new long[] { 2, 3, 4 },
+                        },
+                        Minimum = 3,
+                        DoNotKill = false,
+                    },
+                },
+            },
+        });
     }
     else
     {

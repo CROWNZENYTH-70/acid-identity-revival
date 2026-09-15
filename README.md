@@ -1,11 +1,17 @@
 # AC Identity — Offline Revival Kit
 
+> **Project status: done, in maintenance.** The revival goal is met and
+> verified on-device (see “What works”). No further work is planned by the
+> maintainer — the kit is stable, documented, and open for contributors
+> (see “What's next — contributor invites”).
+
 Offline patcher + mission builder for Assassin's Creed Identity (Android).
 Boot past the dead servers into the Animus hub or straight into a playable
 Firenze mission with working enemy AI, combat, and death.
 
-Proven on-device: boot → spawn → 3 guards fight back → killable, plus a
-walking crowd (3 women + mercenary + 2 courtesans) and all 17 High-quality
+Proven on-device: boot → spawn → 3 guards walk patrols and fight back →
+killable with a working kill objective + tracker, plus a walking crowd
+(3 women + mercenary + 5 males + 2 courtesans) and all 17 High-quality
 envs live at a steady 57–59 fps. No servers.
 
 See `GUIDE.md` for how it works, where the mission file goes, and how to
@@ -13,7 +19,9 @@ contribute. A ready-made `mission/tutorial_0001.bin` (our authoring) ships
 in the repo — copy it to the device path in step 5, or rebuild your own.
 `mission/missions/` holds 16 self-authored single-spawn test missions, one
 per env (see GUIDE.md “Env test matrix”), plus 3 patrol versions
-(`test_patrolv1/v2/v3.bin`) with walking guards (see “Patrols”).
+(`test_patrolv1/v2/v3.bin`) with walking guards, `test_patrolpair.bin`
+(two guards, one formation) and `test_objective.bin` (kill-objective gate)
+— see “Patrols” and GUIDE.md “Objectives”.
 
 ## Demo
 
@@ -39,7 +47,8 @@ per env (see GUIDE.md “Env test matrix”), plus 3 patrol versions
 - Custom `tutorial_0001.bin` mission: player spawn + 3 live enemies
   (papal guard, guard captain, crossbowman) with precache → behavior tree →
   stats → attack; guards walk their patrol beats (loop, multi-point beat,
-  standing-watch halt) instead of idling
+  standing-watch halt) instead of idling, plus a working `SlayGuards`
+  primary kill objective with tracker count (see GUIDE.md “Objectives”)
 - Patrols: guards walk beats via `MissionNpcFormation` + waypoint children
   (loop, multi-point beat, standing-watch halt all verified on-device;
   they detect and attack off-route, unlike the old idle statues).
@@ -59,6 +68,24 @@ per env (see GUIDE.md “Env test matrix”), plus 3 patrol versions
 - 4 real gameplay fixes: mission-guid → live NPC alias, lone-NPC
   formation null-check, Parcour cover null-guards, empty-mission
   objective-tracker guard
+
+## What's next — contributor invites
+
+This is the best Identity can be as an offline kit; it will never be a
+PS3/360-era AC (no open cities, social stealth, acted story, or score —
+that is a scope limit, not a bug). Within that, these are real and open:
+
+- **Objectives:** escort / interact / timer variety, multi-objective
+  missions, phase chaining via `OnSuccessId`/`OnFailId` (kill gate in
+  `test_objective.bin` is the template — see GUIDE.md “Objectives”).
+- **Text story:** briefings, objective descriptions, `MissionTextAnnotation`
+  popups, multi-mission arcs. Raw strings pass through; voices don't
+  exist (GameDB VO bank is combat barks only).
+- **Staging:** more beats, paired patrols in main missions, crowd tuning.
+- **End-of-mission flow:** completing a mission currently plays the intro
+  and tries the hub path (server-dead → spinloop). Retry replays cleanly;
+  a clean offline end/restart flow is wanted.
+- **Tooling/docs:** mission CLI, device coverage, screenshots, releases.
 
 ## Requirements
 
