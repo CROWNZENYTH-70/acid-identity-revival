@@ -206,19 +206,16 @@ the full log plus which APK (hub/freeroam) and mission were used.
 
 ## Crowd: what lives offline
 
-All 3 GameDBs (DXT/ETC2/Generic, identical) define exactly 8 HumanoidDefs:
-3 female crowd (`crowd_civilian_female_01/02/03`), `special_npc_mercenary_01`
-(male, verified walking), 2 courtesans (`special_npc_courtesan_01/02`,
-verified walking — distinct off-shoulder dress, see screenshots), and
-2 player classes. The other 7 original pool guids resolve to
-NpcDefinitions, not bodies — dead picks that the patcher now skips.
-`crowd_civilian_male_01/02/03` + `rich_male_01/02` have NO HumanoidDef
-entries at all (FBX/atlas source paths exist as GameDB strings, meshes
-almost surely inside the on-device `Italy_Male` bundle, but the crowd
-`GetItem<HumanoidDef>` lookup has nothing to find). True male crowd needs
-GameDB surgery or the mission-NPC path (male `NpcData` defs exist — open
-experiment). The crowd pool (6 live bodies), the InProgress enable, and
-crowd quality (0.8) are all patcher-controlled; the mission sets
+DB census (parsed entries, not string counts): 83 HumanoidDefs + 127
+NpcDefs, zero key overlap. All 10 original pool bodies have HumanoidDef
+rows (5 female + 5 male: `crowd_civilian_male_01/02/03`,
+`crowd_civilian_rich_male_01/02`); none of them have NpcData rows, so
+crowd bodies only spawn via the native crowd path, never as mission NPCs
+(verified: plain-spawn minis crash at 50% load, patrol mini spinloops).
+The patcher pool is 11 live bodies (mercenary + 3 females + 5 males +
+2 courtesans, all verified walking on-device), interleaved so males fall
+inside the spawnable range at forced quality 0.8. Bad picks are
+null-skipped, crowd stays enabled InProgress; the mission sets
 density 40 / max 20.
 
 ## Parcour + tracker guards (patcher-controlled)

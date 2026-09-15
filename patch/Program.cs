@@ -971,20 +971,14 @@ void PatchMain(string[] args)
     }
     // Crowd alive: GuidList had 10 entries but only 3 are live HumanoidDefs,
     // so most random picks died even with the skip (empty streets). Replace
-    // with live guids only -> every spawn survives. Mercenary test: male
-    // special_npc_mercenary_01 first so quality 0.7 pool (indices 0-2)
-    // includes him. Keep InProgress crowd enabled (missions blank streets
-    // by design, we want alive).
-    // NOTE (male crowd): frozen GameDBs (DXT/ETC2/Generic, all identical)
-    // define exactly 8 HumanoidDefs - 3 female crowd, mercenary, 2 courtesans,
-    // 2 player classes. crowd_civilian_male_01/02/03 + rich_male_01/02 have
-    // NO HumanoidDef entries (FBX/atlas source paths exist in GameDB strings,
-    // meshes almost surely inside Italy_Male bundle proven present by the
-    // walking mercenary, but SpawnCrowdCharacter's GetItem<HumanoidDef>
-    // lookup has nothing to find). True male crowd needs GameDB surgery
-    // (new entries) or the mission-NPC path (NpcData defs exist - open
-    // experiment). Courtesans below are the recoverable variety win: live
-    // defs, bodies almost surely in Italy_Female (present - females walk).
+    // with live guids only -> every spawn survives.
+    // Pool math: SpawnCrowdCharacter picks Random.Range(0, floor(N*quality+0.9)).
+    // Patch forces quality 0.8, so with N=11 the spawnable range is 0-8;
+    // courtesans sit at 9-10 (same as before: last entry excluded at 0.8).
+    // DB census (parsed entries, not strings): 83 HumanoidDefs + 127 NpcDefs,
+    // zero key overlap. All 10 original pool bodies HAVE HumanoidDef rows
+    // (5 female + 5 male); none have NpcData rows (mission-NPC path closed).
+    // Keep InProgress crowd enabled (missions blank streets by design).
     {
         var csT = Find(mod, "Assets.Scripts.Crowd.CrowdSettings");
         var cctor = csT.Methods.First(mt => mt.Name == ".cctor");
@@ -993,12 +987,17 @@ void PatchMain(string[] args)
         var guidField = csT.Fields.First(f => f.Name == "GuidList");
         var live = new[]
         {
-            "58c1d7ef-4e26-4dca-8667-6aae65cee5e3", // special_npc_mercenary_01 (male)
+            "58c1d7ef-4e26-4dca-8667-6aae65cee5e3", // special_npc_mercenary_01 (male, proven walks)
             "15c667c9-4ec9-4044-84c7-965cf31ba7d7", // crowd_civilian_female_03
+            "9f772dc7-1c87-494c-a5eb-f96793122663", // crowd_civilian_male_01
             "86d505ad-c3ba-43ac-a5b9-101fff12be84", // crowd_civilian_female_01
+            "7ee7ed83-5975-4137-97ea-b15683283dd1", // crowd_civilian_male_02
             "ddac503d-625f-486e-a56d-7c552f579cbf", // crowd_civilian_female_02
-            "37aac035-5b61-4269-8214-15bffc0deef3", // special_npc_courtesan_01 (TEST - needs device verify)
-            "a8936d0b-ead1-4953-99c1-9cb21cf525e3", // special_npc_courtesan_02 (TEST - needs device verify)
+            "3ab3d8c0-3aa3-4675-a66a-28594a527d41", // crowd_civilian_male_03
+            "b1e84e84-7424-4a9f-bfb9-d749385cc12c", // crowd_civilian_rich_male_01
+            "ba47c436-c31b-4792-9a71-3e7cd7d9e0de", // crowd_civilian_rich_male_02
+            "37aac035-5b61-4269-8214-15bffc0deef3", // special_npc_courtesan_01
+            "a8936d0b-ead1-4953-99c1-9cb21cf525e3", // special_npc_courtesan_02
         };
         cil.InsertBefore(cRet, cil.Create(OpCodes.Ldc_I4, live.Length));
         cil.InsertBefore(cRet, cil.Create(OpCodes.Newarr, strType));
@@ -1010,7 +1009,7 @@ void PatchMain(string[] args)
             cil.InsertBefore(cRet, cil.Create(OpCodes.Stelem_Ref));
         }
         cil.InsertBefore(cRet, cil.Create(OpCodes.Stsfld, guidField));
-        Console.WriteLine("crowd GuidList -> mercenary + 3 females + 2 courtesans (TEST)");
+        Console.WriteLine("crowd GuidList -> mercenary + 3 females + 5 males + 2 courtesans");
         var crowdT2 = Find(mod, "Assets.Scripts.Crowd.Crowd");
         var omc = crowdT2.Methods.First(mt => mt.Name == "OnMissionChanged" && mt.Parameters.Count == 1);
         omc.Body.Instructions.Clear(); omc.Body.ExceptionHandlers.Clear();

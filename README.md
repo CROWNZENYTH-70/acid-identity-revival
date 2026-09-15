@@ -45,8 +45,8 @@ per env (see GUIDE.md “Env test matrix”), plus 3 patrol versions
   See `mission/missions/test_patrolv3.bin` + GUIDE.md “Patrols”
 - 60 fps mission cap (was 25), navmesh spawn snap, ETC2 texture lock
 - Crowd alive: bad-pick null-skip, live-guid pool (3 women + mercenary +
-  2 courtesans, all verified walking), stays enabled during missions,
-  crowd quality 0.8, density 40 / max 20
+  5 males + 2 courtesans, all verified walking on-device), stays enabled
+  during missions, crowd quality 0.8, density 40 / max 20
 - High envs: all 17 High bundles live on-device (17/17 scenes boot, zero
   crashes), swapped under the Low cache UID + catalogue size patch —
   including palazzo *nighttime* (UID `2b03ed47-...`, found unmapped in the
@@ -102,14 +102,6 @@ Install the APK, push the mission to
 `/storage/emulated/0/ACID_Revival/AcierData/Missions/tutorial_0001.bin`,
 launch. Crash/error log (only on real errors) lands at
 `/storage/emulated/0/ACID_Revival/boot.log`.
-
-## Known issues (good first contributions)
-
-- Male crowd variety: only 1 male body (`special_npc_mercenary_01`) ships in
-  the offline GameDB — the 8 frozen HumanoidDefs are 3 female crowd,
-  mercenary, 2 courtesans, 2 player classes; male civilian defs have no
-  bodies. True male crowd needs GameDB surgery or the mission-NPC path
-  (male `NpcData` defs exist — open experiment).
 
 ## Legal
 
