@@ -40,7 +40,8 @@ crowd density 40 / max 20. Place it at:
 player-only spawn at origin (navmesh snap lands it), no guards unless
 rebuilt without `--no-guards` — plus 3 patrol versions
 (`test_patrolv1/v2/v3.bin`): santacroce sunny at the locked spawn with
-3 walking guards (see “Patrols”). To test a scene on-device without adb:
+3 walking guards, and `test_patrolpair.bin` (two guards, one formation,
+walking together — see “Patrols”). To test a scene on-device without adb:
 copy the test file over `tutorial_0001.bin` in the Missions folder
 (exact name), launch, and restore afterwards (keep `tutorial_0001.GOOD.bak`
 safe — `tutorial_0001.bin` hash changes every rebuild, same content).
@@ -98,11 +99,20 @@ unlike the old full-idle statues.
   standing-watch halt. GuardA's square hit the map east wall (x=-34).
 - `test_patrolv3.bin` (current): same as v2 with GuardA's loop recentered
   to (-47,-49), 10m square clear of the wall. All 3 beats verified walking.
+- `test_patrolpair.bin`: paired proof — GuardA+GuardB share one formation
+  node (formation FIRST, then two spawns) on the verified B line beat,
+  walking together. Verified on-device.
+- Main mission (`mission/tutorial_0001.bin`, rebuilt): all 3 guards walk
+  the v3 beats instead of idling — square loop, 3-point beat with fast
+  leg, brisk beat + 3s watch halt.
 
 Authoring: `PatrolNpc(...)` in `mission/Program.cs` (`Military`,
-`BackAndForth`/`Circeling`, per-waypoint idle/speed). All component/node
-IDs unique mission-wide (spawns 2–4, formations 12–14, waypoints 22–30).
-Rebuild: same CLI, output name `test_patrol` triggers the locked spawn.
+`BackAndForth`/`Circeling`, per-waypoint idle/speed); paired:
+`PatrolPair(...)` — formation + N spawns on one node, waypoint children.
+All component/node IDs unique mission-wide (spawns 2–4, formations
+12–14, waypoints 22–30; pair uses formation 12, spawns 2–3, waypoints
+22–24). Rebuild: same CLI, output name `test_patrol` triggers the locked
+spawn (`test_patrolpair` for the pair probe).
 
 ## Spawn coordinates
 

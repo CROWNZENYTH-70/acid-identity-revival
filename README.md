@@ -38,10 +38,13 @@ per env (see GUIDE.md “Env test matrix”), plus 3 patrol versions
   boot proof, not gameplay. Playable content is the Firenze mission.
 - Custom `tutorial_0001.bin` mission: player spawn + 3 live enemies
   (papal guard, guard captain, crossbowman) with precache → behavior tree →
-  stats → attack
+  stats → attack; guards walk their patrol beats (loop, multi-point beat,
+  standing-watch halt) instead of idling
 - Patrols: guards walk beats via `MissionNpcFormation` + waypoint children
   (loop, multi-point beat, standing-watch halt all verified on-device;
   they detect and attack off-route, unlike the old idle statues).
+  Paired patrols verified too (`test_patrolpair.bin`: two guards, one
+  formation, walking together). Main mission ships walking sentries.
   See `mission/missions/test_patrolv3.bin` + GUIDE.md “Patrols”
 - 60 fps mission cap (was 25), navmesh spawn snap, ETC2 texture lock
 - Crowd alive: bad-pick null-skip, live-guid pool (3 women + mercenary +

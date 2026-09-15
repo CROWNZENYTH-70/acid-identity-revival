@@ -16,9 +16,11 @@ string missionUrl = "Missions/" + Path.GetFileName(outFile);
 // test_patrol reuses the locked spawn so the player can watch the guard beats.
 bool isMain = baseName == "tutorial_0001" && sceneName == "Firenze_santacroce_sunny";
 bool isPatrol = baseName == "test_patrol" && sceneName == "Firenze_santacroce_sunny";
-float px = (isMain || isPatrol) ? -50f : 0f;
-float py = (isMain || isPatrol) ? 5f : 40f;
-float pz = (isMain || isPatrol) ? -50f : 0f;
+// Paired-patrol probe: two guards sharing one formation node.
+bool isPair = baseName == "test_patrolpair" && sceneName == "Firenze_santacroce_sunny";
+float px = (isMain || isPatrol || isPair) ? -50f : 0f;
+float py = (isMain || isPatrol || isPair) ? 5f : 40f;
+float pz = (isMain || isPatrol || isPair) ? -50f : 0f;
 
 var root = new MissionRootContent
 {
@@ -73,9 +75,26 @@ if (!noGuards)
 {
     if (isMain)
     {
-        children.Add(Npc("GuardA", 2, "520620a5-024d-4633-aaf8-21a5f0db7903", -40, -50, 5f));
-        children.Add(Npc("GuardB", 3, "2d2ca21b-99e9-4a71-ad13-68dd5748574c", -60, -50, 5f));
-        children.Add(Npc("GuardC", 4, "d91147f6-5386-4ba7-b5b2-0334051fac5b", -50, -40, 5f));
+        // Walking sentries: v3-verified beats (A square loop recentered off
+        // the east wall, B 3-point beat, C brisk beat + watch halt).
+        children.Add(PatrolNpc("GuardA", 2, 12, "520620a5-024d-4633-aaf8-21a5f0db7903",
+            -47, -49, 5f, EFormationIterationType.Circeling, new (float, float, int, float, EMovementSpeed)[] {
+                (-52f, -54f, 22, 0.8f, EMovementSpeed.Walk),
+                (-42f, -54f, 23, 0.8f, EMovementSpeed.Walk),
+                (-42f, -44f, 24, 0.8f, EMovementSpeed.Walk),
+                (-52f, -44f, 25, 0.8f, EMovementSpeed.Walk),
+            }));
+        children.Add(PatrolNpc("GuardB", 3, 13, "2d2ca21b-99e9-4a71-ad13-68dd5748574c",
+            -60, -50, 5f, EFormationIterationType.BackAndForth, new (float, float, int, float, EMovementSpeed)[] {
+                (-68f, -50f, 26, 0.5f, EMovementSpeed.WalkFast),
+                (-60f, -50f, 27, 1.0f, EMovementSpeed.Walk),
+                (-52f, -50f, 28, 0.5f, EMovementSpeed.Walk),
+            }));
+        children.Add(PatrolNpc("GuardC", 4, 14, "d91147f6-5386-4ba7-b5b2-0334051fac5b",
+            -50, -40, 5f, EFormationIterationType.BackAndForth, new (float, float, int, float, EMovementSpeed)[] {
+                (-50f, -46f, 29, 0.3f, EMovementSpeed.Walk),
+                (-50f, -34f, 30, 3.0f, EMovementSpeed.Walk),
+            }));
     }
     else if (isPatrol)
     {
@@ -105,6 +124,23 @@ if (!noGuards)
             -50, -40, 5f, EFormationIterationType.BackAndForth, new (float, float, int, float, EMovementSpeed)[] {
                 (-50f, -46f, 29, 0.3f, EMovementSpeed.Walk),
                 (-50f, -34f, 30, 3.0f, EMovementSpeed.Walk),
+            }));
+    }
+    else if (isPair)
+    {
+        // Paired probe: GuardA+GuardB share one formation node (formation
+        // FIRST, then two spawns) on B's verified line beat.
+        // WarpPatrolAndMembers pulls both spawns off the same object and
+        // spreads them via formation offsets. All IDs unique mission-wide.
+        children.Add(PatrolPair("PairAB", 12,
+            new (string name, int spawnId, string typeGuid)[] {
+                ("GuardA", 2, "520620a5-024d-4633-aaf8-21a5f0db7903"),
+                ("GuardB", 3, "2d2ca21b-99e9-4a71-ad13-68dd5748574c"),
+            },
+            -60, -50, 5f, EFormationIterationType.BackAndForth, new (float, float, int, float, EMovementSpeed)[] {
+                (-68f, -50f, 22, 0.5f, EMovementSpeed.Walk),
+                (-60f, -50f, 23, 1.0f, EMovementSpeed.Walk),
+                (-52f, -50f, 24, 0.5f, EMovementSpeed.Walk),
             }));
     }
     else
@@ -188,6 +224,92 @@ static SerializedNode PatrolNpc(string name, int spawnId, int formationId, strin
                 },
             },
         },
+    };
+    var wps = new List<SerializedNode>();
+    foreach (var (wx, wz, wid, idle, speed) in beat)
+    {
+        wps.Add(new SerializedNode
+        {
+            Name = $"{name}_WP{wid}",
+            PositionX = wx,
+            PositionY = y,
+            PositionZ = wz,
+            Components = new[]
+            {
+                new SerializedNodeComponent
+                {
+                    Type = SerializedNodeComponent.NodeType.NodeType_MissionWaypointContent,
+                    MissionWaypointContent = new MissionWaypointContent
+                    {
+                        MissionBaseContent = new MissionBaseContent { ID = wid, ActivateAtId = -2, RemoveAtId = -2 },
+                        IdleCategory = ENpcIdleCategory.Neutral,
+                        IdleTime = idle,
+                        RotationType = ERotationAtWaypoint.None,
+                        MinSpeed = speed,
+                        MaxSpeed = speed,
+                        WarpTarget = false,
+                        ActivationIterationType = iter,
+                        ActivationIterationStartType = ERouteIterationStart.Up_ERouteIterationStart,
+                    },
+                },
+            },
+        });
+    }
+    node.Children = wps.ToArray();
+    return node;
+}
+// Paired patrol: formation FIRST, then one spawn component per guard on the
+// same node, then waypoint children. All IDs unique mission-wide.
+static SerializedNode PatrolPair(string name, int formationId,
+    (string name, int spawnId, string typeGuid)[] guards,
+    float x, float z, float y, EFormationIterationType iter,
+    (float wx, float wz, int wid, float idle, EMovementSpeed speed)[] beat)
+{
+    var comps = new List<SerializedNodeComponent>
+    {
+        new SerializedNodeComponent
+        {
+            Type = SerializedNodeComponent.NodeType.NodeType_MissionNpcFormationContent,
+            MissionNpcFormationContent = new MissionNpcFormationContent
+            {
+                MissionFormationBaseContent = new MissionFormationBaseContent
+                {
+                    MissionBaseContent = new MissionBaseContent { ID = formationId, ActivateAtId = -2, RemoveAtId = -2 },
+                    Type = EPatrolType.Military,
+                    IterationType = iter,
+                    IterationDirection = EFormationIterationDirection.Up,
+                    FixedLeaderSlot = false,
+                    Radius = 0f,
+                },
+            },
+        },
+    };
+    foreach (var (gname, spawnId, typeGuid) in guards)
+    {
+        comps.Add(new SerializedNodeComponent
+        {
+            Type = SerializedNodeComponent.NodeType.NodeType_MissionNpcSpawnContent,
+            MissionNpcSpawnContent = new MissionNpcSpawnContent
+            {
+                MissionSpawnEntityContent = new MissionSpawnEntityContent
+                {
+                    MissionBaseContent = new MissionBaseContent { ID = spawnId, ActivateAtId = -2, RemoveAtId = -2 },
+                    IsMimic = false,
+                    FadeMode = EFadeMode.Simple_EFadeMode,
+                    FadeDuration = 0f,
+                },
+                TypeGuid = typeGuid,
+                ScalingMultiplier = 1f,
+            },
+        });
+    }
+    var node = new SerializedNode
+    {
+        Name = name,
+        PositionX = x,
+        PositionY = y,
+        PositionZ = z,
+        Components = comps.ToArray(),
     };
     var wps = new List<SerializedNode>();
     foreach (var (wx, wz, wid, idle, speed) in beat)
