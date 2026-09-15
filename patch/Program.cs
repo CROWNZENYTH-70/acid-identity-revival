@@ -975,6 +975,16 @@ void PatchMain(string[] args)
     // special_npc_mercenary_01 first so quality 0.7 pool (indices 0-2)
     // includes him. Keep InProgress crowd enabled (missions blank streets
     // by design, we want alive).
+    // NOTE (male crowd): frozen GameDBs (DXT/ETC2/Generic, all identical)
+    // define exactly 8 HumanoidDefs - 3 female crowd, mercenary, 2 courtesans,
+    // 2 player classes. crowd_civilian_male_01/02/03 + rich_male_01/02 have
+    // NO HumanoidDef entries (FBX/atlas source paths exist in GameDB strings,
+    // meshes almost surely inside Italy_Male bundle proven present by the
+    // walking mercenary, but SpawnCrowdCharacter's GetItem<HumanoidDef>
+    // lookup has nothing to find). True male crowd needs GameDB surgery
+    // (new entries) or the mission-NPC path (NpcData defs exist - open
+    // experiment). Courtesans below are the recoverable variety win: live
+    // defs, bodies almost surely in Italy_Female (present - females walk).
     {
         var csT = Find(mod, "Assets.Scripts.Crowd.CrowdSettings");
         var cctor = csT.Methods.First(mt => mt.Name == ".cctor");
@@ -983,12 +993,14 @@ void PatchMain(string[] args)
         var guidField = csT.Fields.First(f => f.Name == "GuidList");
         var live = new[]
         {
-            "58c1d7ef-4e26-4dca-8667-6aae65cee5e3",
-            "15c667c9-4ec9-4044-84c7-965cf31ba7d7",
-            "86d505ad-c3ba-43ac-a5b9-101fff12be84",
-            "ddac503d-625f-486e-a56d-7c552f579cbf",
+            "58c1d7ef-4e26-4dca-8667-6aae65cee5e3", // special_npc_mercenary_01 (male)
+            "15c667c9-4ec9-4044-84c7-965cf31ba7d7", // crowd_civilian_female_03
+            "86d505ad-c3ba-43ac-a5b9-101fff12be84", // crowd_civilian_female_01
+            "ddac503d-625f-486e-a56d-7c552f579cbf", // crowd_civilian_female_02
+            "37aac035-5b61-4269-8214-15bffc0deef3", // special_npc_courtesan_01 (TEST - needs device verify)
+            "a8936d0b-ead1-4953-99c1-9cb21cf525e3", // special_npc_courtesan_02 (TEST - needs device verify)
         };
-        cil.InsertBefore(cRet, cil.Create(OpCodes.Ldc_I4_4));
+        cil.InsertBefore(cRet, cil.Create(OpCodes.Ldc_I4, live.Length));
         cil.InsertBefore(cRet, cil.Create(OpCodes.Newarr, strType));
         for (int gi = 0; gi < live.Length; gi++)
         {
@@ -998,7 +1010,7 @@ void PatchMain(string[] args)
             cil.InsertBefore(cRet, cil.Create(OpCodes.Stelem_Ref));
         }
         cil.InsertBefore(cRet, cil.Create(OpCodes.Stsfld, guidField));
-        Console.WriteLine("crowd GuidList -> mercenary + 3 females");
+        Console.WriteLine("crowd GuidList -> mercenary + 3 females + 2 courtesans (TEST)");
         var crowdT2 = Find(mod, "Assets.Scripts.Crowd.Crowd");
         var omc = crowdT2.Methods.First(mt => mt.Name == "OnMissionChanged" && mt.Parameters.Count == 1);
         omc.Body.Instructions.Clear(); omc.Body.ExceptionHandlers.Clear();
@@ -1008,6 +1020,99 @@ void PatchMain(string[] args)
         Console.WriteLine("crowd stays enabled InProgress");
     }
     // Spawn/lifecycle/startup entry traces retired. Dropped for clean build.
+    // ---- P-V: ParcourHelper.CheckCivilianCover null guards (NRE-spam fix) ----
+    // Crowd / diverted NPCs often have null Patrol, PatrolDefinition,
+    // Definition, PatrolComponent or Formation. Each nulled the per-tick
+    // cover prediction with an NRE (log spam, cover never found).
+    // Return false (no cover) instead, matching the existing early-outs.
+    // STACK-DEPTH TRAP (bit us once -> InvalidProgramException on device):
+    // an early Ret is only valid with exactly [return-value] on the stack.
+    // Two guarded calls sit INSIDE the CanApproachPatrol argument list with
+    // [interaction, id] already pending, so their false-path must pop 3
+    // (null result + 2 pending), not 1. Guards are depth-aware accordingly;
+    // asserts fail loud at patch time if the compiler output ever changes.
+    {
+        var phT = Find(mod, "Assets.Scripts.Mission.Motion.ParcourHelper");
+        var cov = phT.Methods.First(mt => mt.Name == "CheckCivilianCover" && mt.Parameters.Count == 5);
+        var cil = cov.Body.GetILProcessor();
+        var deref = new HashSet<string> { "get_Patrol", "get_PatrolDefinition", "get_Definition", "get_PatrolComponent", "get_Formation" };
+        var insns = cov.Body.Instructions.ToList();
+        int winStart = insns.FindIndex(i => (i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt) && i.Operand is MethodReference m1 && m1.Name == "get_AssassinInteraction");
+        int winEnd = insns.FindIndex(i => (i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt) && i.Operand is MethodReference m2 && m2.Name == "CanApproachPatrol");
+        if (winStart < 0 || winEnd < 0 || winEnd < winStart) throw new Exception("P-V: approach window not found");
+        var inside = new HashSet<Mono.Cecil.Cil.Instruction>(insns.Skip(winStart + 1).Take(winEnd - winStart - 1));
+        // no outside branch may land inside the window (would break depth 0 at entry)
+        foreach (var i in insns)
+        {
+            if (i.Operand is Mono.Cecil.Cil.Instruction t && inside.Contains(t) && !inside.Contains(i))
+                throw new Exception("P-V: outside branch into approach window");
+            if (i.Operand is Mono.Cecil.Cil.Instruction[] ts && ts.Any(t => inside.Contains(t)))
+                throw new Exception("P-V: outside switch into approach window");
+        }
+        int n = 0, nDeep = 0;
+        foreach (var ins in insns)
+        {
+            if ((ins.OpCode == OpCodes.Call || ins.OpCode == OpCodes.Callvirt) && ins.Operand is MethodReference mr && deref.Contains(mr.Name))
+            {
+                if (mr.Name == "get_Patrol" && !mr.DeclaringType.FullName.Contains("NpcCharacter")) continue;
+                bool deep = inside.Contains(ins);
+                if (deep && !(mr.Name == "get_PatrolDefinition" || mr.Name == "get_Definition"))
+                    throw new Exception("P-V: unexpected nested deref " + mr.Name);
+                var cont = ins.Next;
+                if (cont == null) throw new Exception("P-V: deref is last instr");
+                cil.InsertBefore(cont, cil.Create(OpCodes.Dup));
+                cil.InsertBefore(cont, cil.Create(OpCodes.Brtrue_S, cont));
+                cil.InsertBefore(cont, cil.Create(OpCodes.Pop)); // null result
+                if (deep)
+                {
+                    cil.InsertBefore(cont, cil.Create(OpCodes.Pop)); // pending id
+                    cil.InsertBefore(cont, cil.Create(OpCodes.Pop)); // pending interaction
+                    nDeep++;
+                }
+                cil.InsertBefore(cont, cil.Create(OpCodes.Ldc_I4_0));
+                cil.InsertBefore(cont, cil.Create(OpCodes.Ret));
+                n++;
+            }
+        }
+        if (n != 7 || nDeep != 2) throw new Exception($"P-V: expected 7 guards / 2 nested, got {n} / {nDeep}");
+        Console.WriteLine($"parcour cover null-guards: {n} ({nDeep} nested)");
+        // public CheckCivilianCovers: null NavMeshAgent -> Invalid (0), skip prediction
+        var covs = phT.Methods.First(mt => mt.Name == "CheckCivilianCovers");
+        var cil2 = covs.Body.GetILProcessor();
+        var f0 = covs.Body.Instructions[0];
+        var cont2 = cil2.Create(OpCodes.Nop);
+        cil2.InsertBefore(f0, cil2.Create(OpCodes.Ldarg_1));
+        cil2.InsertBefore(f0, cil2.Create(OpCodes.Brtrue_S, cont2));
+        cil2.InsertBefore(f0, cil2.Create(OpCodes.Ldc_I4_0));
+        cil2.InsertBefore(f0, cil2.Create(OpCodes.Ret));
+        cil2.InsertBefore(f0, cont2);
+        Console.WriteLine("parcour covers null-agent guard");
+    }
+    // ---- P-W: OptionsMenuData.UpdateMissionTracker empty-mission guard ----
+    // Custom missions ship no objectives: CollectedObjectiveData is an empty
+    // BBList, so Last()/First() NRE on every options refresh (live in
+    // boot.log). Wrap the UI-only method in a swallow-guard: any failure
+    // just skips the tracker refresh. Same handler shape as TraceOffline.
+    {
+        var omdT = Find(mod, "Assets.Scripts.UI.OptionsMenuData");
+        var um = omdT.Methods.First(mt => mt.Name == "UpdateMissionTracker" && !mt.HasParameters);
+        var uil = um.Body.GetILProcessor();
+        var first = um.Body.Instructions[0];
+        var end = uil.Create(OpCodes.Ret);
+        uil.Append(end);
+        var hPop = uil.Create(OpCodes.Pop);
+        uil.Append(hPop);
+        uil.Append(uil.Create(OpCodes.Leave, end));
+        foreach (var ins in um.Body.Instructions.ToList())
+        {
+            if (ins.OpCode == OpCodes.Ret && ins != end) { ins.OpCode = OpCodes.Leave; ins.Operand = end; }
+        }
+        um.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+        {
+            TryStart = first, TryEnd = hPop, HandlerStart = hPop, HandlerEnd = end, CatchType = excType
+        });
+        Console.WriteLine("tracker empty-mission guard");
+    }
 
     asm.Write(outDll);
     Console.WriteLine("WROTE " + outDll);

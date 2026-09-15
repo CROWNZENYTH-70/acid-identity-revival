@@ -133,16 +133,17 @@ bundles ONLY from here. Push your own cache copy's bundle files to
 `files/cache/` via adb — nothing in this repo fetches them, and the shared
 folder above can never substitute for them.
 
-**High-quality envs — ALL LIVE ON DEVICE (16/16 boot, zero crashes):**
+**High-quality envs — ALL LIVE ON DEVICE (17/17 boot, zero crashes):**
 every dumped High bundle was swapped under its scene's Low cache UID with
 the catalogue size fields patched (see procedure below) — Santacroce sunny,
-stormy and tutorial, palazzo daytime, both Forlis, both Monteriggionis,
-both Sant'Angelos, both Colosseums, plus the 4 Animus scenes. Palazzo
-*nighttime* High was missing from the MEGA catalogue's URL table but its
-bytes were in the same RAR unmapped (`2b03ed47-...`, 92997260 bytes =
-dict size byte-exact, UnityRaw Nov-2016, strings-confirmed) — same swap
-procedure, Low UID `d4775295-...` (verify size 70099692 on-device first;
-catalogue sizes `ec a2 2d 04 …` → `8c 06 8b 05 …`). Method (no patch change — the game keeps
+stormy and tutorial, palazzo daytime AND nighttime, both Forlis, both
+Monteriggionis, both Sant'Angelos, both Colosseums, plus the 4 Animus
+scenes. Palazzo *nighttime* High was missing from the MEGA catalogue's URL
+table but its bytes were in the same RAR unmapped (`2b03ed47-...`,
+92997260 bytes = dict size byte-exact, UnityRaw Nov-2016,
+strings-confirmed, verified booting on-device with lit-window detail) —
+same swap procedure, Low UID `0994de5d-...` (verify size 70099692
+on-device first; catalogue sizes `ec a2 2d 04 …` → `8c 06 8b 05 …`). Method (no patch change — the game keeps
 requesting the Low URL): overwrite the Low bundle file with the High bytes
 under the SAME cache UID, then patch the two LE64 size fields in
 `files/cache/catalogue.bin` for that entry, because `Manager.Verify`
@@ -179,23 +180,42 @@ the full log plus which APK (hub/freeroam) and mission were used.
 
 ## Crowd: what lives offline
 
-The frozen GameDBs ship only 4 crowd-capable bodies: 3 women
-(`crowd_civilian_female_01/02/03`) + 1 man (`special_npc_mercenary_01`,
-verified walking on-device). The other 7 original pool guids resolve to
-NpcDefinitions, not bodies — dead picks that the patcher now skips. Male
-civilian defs exist in `NpcData` but their bodies were never dumped, so a
-mixed street is currently 3 women + 1 mercenary. The crowd pool, the
-InProgress enable, and crowd quality (0.8) are all patcher-controlled; the
-mission sets density 40 / max 20.
+All 3 GameDBs (DXT/ETC2/Generic, identical) define exactly 8 HumanoidDefs:
+3 female crowd (`crowd_civilian_female_01/02/03`), `special_npc_mercenary_01`
+(male, verified walking), 2 courtesans (`special_npc_courtesan_01/02`,
+verified walking — distinct off-shoulder dress, see screenshots), and
+2 player classes. The other 7 original pool guids resolve to
+NpcDefinitions, not bodies — dead picks that the patcher now skips.
+`crowd_civilian_male_01/02/03` + `rich_male_01/02` have NO HumanoidDef
+entries at all (FBX/atlas source paths exist as GameDB strings, meshes
+almost surely inside the on-device `Italy_Male` bundle, but the crowd
+`GetItem<HumanoidDef>` lookup has nothing to find). True male crowd needs
+GameDB surgery or the mission-NPC path (male `NpcData` defs exist — open
+experiment). The crowd pool (6 live bodies), the InProgress enable, and
+crowd quality (0.8) are all patcher-controlled; the mission sets
+density 40 / max 20.
 
-## Env test matrix (all 16 boot on-device, zero crashes)
+## Parcour + tracker guards (patcher-controlled)
+
+- `ParcourHelper.CheckCivilianCover`: 7 null-guards (Patrol,
+  PatrolDefinition ×2, Definition ×2, PatrolComponent, Formation) + null
+  NavMeshAgent guard on `CheckCivilianCovers`. Two calls sit inside the
+  `CanApproachPatrol` argument list, so their guards pop the 2 pending
+  args too — patch-time asserts (7 guards / 2 nested) fail loud if the
+  compiler output ever changes. (The naive version shipped an
+  `InvalidProgramException` caught on-device; depth-aware version verified
+  clean in `boot.log`.)
+- `OptionsMenuData.UpdateMissionTracker`: swallow-guard — custom missions
+  ship no objectives, which NRE'd on every options refresh.
+
+## Env test matrix (all 17 boot on-device, zero crashes)
 
 | Mission file | Scene | Notes |
 |---|---|---|
 | `test_animus_globe.bin` | AnimusGlobe | hub scene as mission |
 | `test_tut01/02/03.bin` | TutorialScene 01–03 | particle-void arenas |
 | `test_palazzo_day.bin` | Firenze palazzo daytime | High |
-| `test_palazzo_night.bin` | Firenze palazzo nighttime | High (swap per above) |
+| `test_palazzo_night.bin` | Firenze palazzo nighttime | High, verified live |
 | `test_santacroce_tut.bin` | Firenze santacroce tutorial | High, liveliest street |
 | `test_santacroce_stormy.bin` | Firenze santacroce stormy | High |
 | `test_forli_dusk.bin` / `test_forli_siege.bin` | Forli dusk / siege | High |

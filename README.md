@@ -5,8 +5,8 @@ Boot past the dead servers into the Animus hub or straight into a playable
 Firenze mission with working enemy AI, combat, and death.
 
 Proven on-device: boot → spawn → 3 guards fight back → killable, plus a
-walking crowd (3 women + 1 mercenary) and the High-quality Santacroce env
-at a steady 58–59 fps. No servers.
+walking crowd (3 women + mercenary + 2 courtesans) and all 17 High-quality
+envs live at a steady 57–59 fps. No servers.
 
 See `GUIDE.md` for how it works, where the mission file goes, and how to
 contribute. A ready-made `mission/tutorial_0001.bin` (our authoring) ships
@@ -26,6 +26,8 @@ per env (see GUIDE.md “Env test matrix”).
 ![Monteriggioni at night](docs/screenshots/test_monte_night.jpg)
 ![Firenze palazzo, daytime](docs/screenshots/test_plazzo_day.jpg)
 ![Castel Sant'Angelo bridge](docs/screenshots/test_roma_overcast.jpg)
+![Firenze alley, courtesan walking](docs/screenshots/test_courtesan_alley.jpg)
+![Firenze palazzo, nighttime High](docs/screenshots/test_palazzo_night.jpg)
 
 ## What works
 
@@ -37,17 +39,18 @@ per env (see GUIDE.md “Env test matrix”).
   (papal guard, guard captain, crossbowman) with precache → behavior tree →
   stats → attack
 - 60 fps mission cap (was 25), navmesh spawn snap, ETC2 texture lock
-- Crowd alive: bad-pick null-skip, live-guid pool (3 women + mercenary),
-  stays enabled during missions, crowd quality 0.8, density 40 / max 20
-- High envs: every dumped High bundle live on-device (16/16 available scenes
-  boot, zero crashes), swapped under the Low cache UID + catalogue size
-  patch — palazzo *nighttime* High was found unmapped in the same MEGA dump
-  (UID `2b03ed47-...`, size byte-exact vs dict) and is queued for its swap
-  (see `GUIDE.md` + `tools/high_env_uids.txt`)
+- Crowd alive: bad-pick null-skip, live-guid pool (3 women + mercenary +
+  2 courtesans, all verified walking), stays enabled during missions,
+  crowd quality 0.8, density 40 / max 20
+- High envs: all 17 High bundles live on-device (17/17 scenes boot, zero
+  crashes), swapped under the Low cache UID + catalogue size patch —
+  including palazzo *nighttime* (UID `2b03ed47-...`, found unmapped in the
+  MEGA dump, size byte-exact vs dict; see `GUIDE.md` + `tools/high_env_uids.txt`)
 - Presentation: full-res (downscaling off), BumpedSpecular shaders (LOD 400),
   Unity tier 5, 2x MSAA, 15 m stable shadows — steady 57–59 fps
-- 2 real gameplay fixes: mission-guid → live NPC alias, lone-NPC
-  formation null-check
+- 4 real gameplay fixes: mission-guid → live NPC alias, lone-NPC
+  formation null-check, Parcour cover null-guards, empty-mission
+  objective-tracker guard
 
 ## Requirements
 
@@ -97,14 +100,12 @@ launch. Crash/error log (only on real errors) lands at
 
 ## Known issues (good first contributions)
 
-- `ParcourHelper.CheckCivilianCover` NRE spam (player-side, pre-existing).
 - Patrol routes unverified (`MissionNpcFormation` + `PatrolData` wiring).
 - Male crowd variety: only 1 male body (`special_npc_mercenary_01`) ships in
-  the offline GameDB; male civilian defs exist but their bodies were never
-  dumped. Spawning male civilians as mission NPCs is an open experiment.
-- Palazzo *nighttime* High: recovered since (unmapped file in the MEGA dump,
-  UID `2b03ed47-...`); swap pending on-device verification. All other High
-  envs are live.
+  the offline GameDB — the 8 frozen HumanoidDefs are 3 female crowd,
+  mercenary, 2 courtesans, 2 player classes; male civilian defs have no
+  bodies. True male crowd needs GameDB surgery or the mission-NPC path
+  (male `NpcData` defs exist — open experiment).
 
 ## Legal
 
