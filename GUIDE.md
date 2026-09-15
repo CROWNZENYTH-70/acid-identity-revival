@@ -38,9 +38,12 @@ crowd density 40 / max 20. Place it at:
 
 `mission/missions/` holds 16 more self-authored missions, one per env —
 player-only spawn at origin (navmesh snap lands it), no guards unless
-rebuilt without `--no-guards`. To test a scene on-device without adb: copy
-the test file over `tutorial_0001.bin` in the Missions folder (exact name),
-launch, and restore afterwards.
+rebuilt without `--no-guards` — plus 3 patrol versions
+(`test_patrolv1/v2/v3.bin`): santacroce sunny at the locked spawn with
+3 walking guards (see “Patrols”). To test a scene on-device without adb:
+copy the test file over `tutorial_0001.bin` in the Missions folder
+(exact name), launch, and restore afterwards (keep `tutorial_0001.GOOD.bak`
+safe — `tutorial_0001.bin` hash changes every rebuild, same content).
 
 Rebuild any of them with the mission CLI:
 
@@ -77,6 +80,29 @@ at `GameDB.FindGameIdFromGuid` entry:
 Plus a null-check in `NpcStatsHelper` so lone NPCs (no formation parent)
 don't abort stats init. To add/change an enemy: pick a live `Enemy_` name
 from the 127 `NpcData` defs, add an alias row, add an `Npc(...)` line.
+
+## Patrols (verified on-device)
+
+Each guard node carries two components — formation FIRST, spawn second
+(`MissionPhase` runs `OnPreActivate` in component order, so the patrol
+entity must exist before the spawn pre-creates the NPC) — plus waypoint
+children forming the beat. `NpcStatsHelper` reads the formation off the
+spawn's own GameObject → `Npc_PatrolId` → patrol member; at `OnActivate`
+the patrol builds its route and warps members on, then walks it via the
+turn-update Approacher. Guards detect and break off to attack, then return —
+unlike the old full-idle statues.
+
+- `test_patrolv1.bin`: first walking proof (3 short 2-point beats).
+- `test_patrolv2.bin`: varied shapes — GuardA square loop (`Circeling`),
+  GuardB 3-point beat with a `WalkFast` leg, GuardC brisk beat with a 3s
+  standing-watch halt. GuardA's square hit the map east wall (x=-34).
+- `test_patrolv3.bin` (current): same as v2 with GuardA's loop recentered
+  to (-47,-49), 10m square clear of the wall. All 3 beats verified walking.
+
+Authoring: `PatrolNpc(...)` in `mission/Program.cs` (`Military`,
+`BackAndForth`/`Circeling`, per-waypoint idle/speed). All component/node
+IDs unique mission-wide (spawns 2–4, formations 12–14, waypoints 22–30).
+Rebuild: same CLI, output name `test_patrol` triggers the locked spawn.
 
 ## Spawn coordinates
 

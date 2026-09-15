@@ -12,7 +12,8 @@ See `GUIDE.md` for how it works, where the mission file goes, and how to
 contribute. A ready-made `mission/tutorial_0001.bin` (our authoring) ships
 in the repo — copy it to the device path in step 5, or rebuild your own.
 `mission/missions/` holds 16 self-authored single-spawn test missions, one
-per env (see GUIDE.md “Env test matrix”).
+per env (see GUIDE.md “Env test matrix”), plus 3 patrol versions
+(`test_patrolv1/v2/v3.bin`) with walking guards (see “Patrols”).
 
 ## Demo
 
@@ -38,6 +39,10 @@ per env (see GUIDE.md “Env test matrix”).
 - Custom `tutorial_0001.bin` mission: player spawn + 3 live enemies
   (papal guard, guard captain, crossbowman) with precache → behavior tree →
   stats → attack
+- Patrols: guards walk beats via `MissionNpcFormation` + waypoint children
+  (loop, multi-point beat, standing-watch halt all verified on-device;
+  they detect and attack off-route, unlike the old idle statues).
+  See `mission/missions/test_patrolv3.bin` + GUIDE.md “Patrols”
 - 60 fps mission cap (was 25), navmesh spawn snap, ETC2 texture lock
 - Crowd alive: bad-pick null-skip, live-guid pool (3 women + mercenary +
   2 courtesans, all verified walking), stays enabled during missions,
@@ -100,7 +105,6 @@ launch. Crash/error log (only on real errors) lands at
 
 ## Known issues (good first contributions)
 
-- Patrol routes unverified (`MissionNpcFormation` + `PatrolData` wiring).
 - Male crowd variety: only 1 male body (`special_npc_mercenary_01`) ships in
   the offline GameDB — the 8 frozen HumanoidDefs are 3 female crowd,
   mercenary, 2 courtesans, 2 player classes; male civilian defs have no
